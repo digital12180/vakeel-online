@@ -15,12 +15,12 @@ export class AuthController {
   }
 
   // ==================== STEP 3: REGISTER USER ====================
-  register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  register = async (req: Request, res: Response, next: NextFunction): Promise<void | Response> => {
     try {
       const registerDto: RegisterDto = req.body;
       const result = await this.authService.register(registerDto)
 
-      ApiResponse.success(res, result, 'Registration successful');
+      return ApiResponse.success(res, result, 'Registration successful');
     } catch (error) {
       next(error);
     }

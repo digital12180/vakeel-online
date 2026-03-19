@@ -6,7 +6,7 @@ export interface IService extends Document {
   title: string;
   description: string;
   category: string;
-  createdBy:mongoose.ObjectId;
+  createdBy: mongoose.ObjectId;
 }
 
 const servceSchema = new Schema<IService>(
@@ -14,7 +14,7 @@ const servceSchema = new Schema<IService>(
     title: {
       type: String,
       required: true,
-      unique:true
+      unique: true
     },
     description: {
       type: String,
@@ -26,11 +26,12 @@ const servceSchema = new Schema<IService>(
         'legal',
         'finance',
         'corporate'
-      ]
+      ],
+      required: true
     },
-    createdBy:{
-      type:mongoose.Schema.Types.ObjectId,
-      ref:'User'
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
     }
   },
   { timestamps: true }
