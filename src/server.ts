@@ -1,4 +1,5 @@
 console.log('🚀 server.ts STARTING...');
+import { errorHandler } from './middlewares/error.middleware.js';
 
 // ==================== LOAD ENV FIRST ====================
 import dotenv from 'dotenv';
@@ -8,7 +9,7 @@ import { connectDB } from "./config/database.js"
 // ==================== IMPORT WITH ALIASES ====================
 import app from './app.js'; // ✅ Import from root
 
-
+app.use(errorHandler);
 // ==================== CONFIGURATION ====================
 const PORT = process.env.PORT || 9093;
 const NODE_ENV = process.env.NODE_ENV || 'development';

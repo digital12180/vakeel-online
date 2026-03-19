@@ -112,8 +112,10 @@ export class AuthService {
             }
             const accessToken = await generateToken(user);
             const refreshToken = await generateToken(user, '30d');
+            const userObj = user.toObject();
+            delete userObj.password;
             return {
-                user,
+                user: userObj,
                 accessToken: accessToken,
                 refreshToken: refreshToken,
                 expiresIn: 7 * 24 * 60 * 60,
@@ -285,8 +287,8 @@ export class AuthService {
                 console.error("❌ User not found for update:", userId);
                 throw new ApiError(404, ERROR_MESSAGES.USER_NOT_FOUND);
             }
-           user.phone=phone??user.phone;
-           await user.save();
+            user.phone = phone ?? user.phone;
+            await user.save();
             return {
                 _id: user._id.toString(),
                 fullname: user.fullname,

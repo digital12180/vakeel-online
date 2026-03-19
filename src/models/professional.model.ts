@@ -29,11 +29,13 @@ const professionalSchema = new mongoose.Schema({
         min: 0
     },
     city: {
-        type: String
+        type: String,
+        required: true
     },
     languages: [
         {
-            type: String
+            type: String,
+            required: true
         }
     ],
     consultationFee: {

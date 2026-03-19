@@ -123,12 +123,21 @@ export class ProfessionalService {
         try {
             const filter: any = { isActive: true };
 
-            if (query.city) {
-                filter.city = { $regex: query.city, $options: "i" }; // case-insensitive
+            if (query.professionType) {
+                filter.professionType = { $regex: query.professionType, $options: "i" }; // case-insensitive
             }
-
+            if (query.fullname) {
+                filter.fullname = { $regex: query.fullname, $options: "i" };
+            }
+            if (query.title) {
+                filter.title = { $regex: query.title, $options: "i" };
+            }
             if (query.professionType) {
                 filter.professionType = query.professionType;
+            }
+
+            if (query.city) {
+                filter.city = query.city;
             }
 
             // 🔥 optional filters

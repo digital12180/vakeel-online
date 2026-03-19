@@ -1,6 +1,11 @@
 {
   // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "target": "ES2020",
+    "esModuleInterop": true,
+
     // File Layout
     // "rootDir": "./src",
     // "outDir": "./dist",
@@ -33,13 +38,9 @@
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
-    "target": "ES2020",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "rootDir": "./src",
-    "outDir": "./dist",
     "strict": true,
-    "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "types": [
