@@ -196,6 +196,8 @@ export const checkRole = (allowedRoles: string[] = []) => {
 
 // ✅ Admin Only Middleware (Shortcut)
 export const adminOnly = checkRole([ROLES.admin]);
+export const userAndadmin=checkRole([ROLES.admin,ROLES.user]);
+export const adminAndprofessionalAnduser=checkRole([ROLES.admin,ROLES.user,ROLES.professional]);
 
 export const adminAndprofessional = checkRole([ROLES.admin, ROLES.professional])
 // ✅ User Only Middleware (Shortcut)
