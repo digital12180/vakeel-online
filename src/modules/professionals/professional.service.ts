@@ -120,60 +120,101 @@ export class ProfessionalService {
 
     // ✅ GET ALL
     async getAllProfessionals(query: any) {
-        try {
-            const filter: any = { isActive: true };
+    try {
+        const page = Math.max(1, Number(query.page) || 1);
+        const limit = Math.max(1, Number(query.limit) || 10);
+        const skip = (page - 1) * limit;
 
-            if (query.professionType) {
-                filter.professionType = { $regex: query.professionType, $options: "i" }; // case-insensitive
-            }
-            if (query.fullname) {
-                filter.fullname = { $regex: query.fullname, $options: "i" };
-            }
-            if (query.title) {
-                filter.title = { $regex: query.title, $options: "i" };
-            }
-            if (query.professionType) {
-                filter.professionType = query.professionType;
-            }
+        const matchStage: any = { isActive: true };
 
-            if (query.city) {
-                filter.city = query.city;
-            }
-
-            // 🔥 optional filters
-            if (query.minFee || query.maxFee) {
-                filter.consultationFee = {};
-                if (query.minFee) filter.consultationFee.$gte = Number(query.minFee);
-                if (query.maxFee) filter.consultationFee.$lte = Number(query.maxFee);
-            }
-
-            // 🔥 pagination
-            const page = Math.max(1, Number(query.page) || 1);
-            const limit = Math.max(1, Number(query.limit) || 10);
-            const skip = (page - 1) * limit;
-
-            const professionals = await Professional.find(filter)
-                .populate("userId")
-                .populate("services")
-                .skip(skip)
-                .limit(limit)
-                .sort({ createdAt: -1 });
-
-            const total = await Professional.countDocuments(filter);
-
-            return {
-                total,
-                page,
-                limit,
-                professionals
-            };
-
-        } catch (error: any) {
-            console.error("❌ Get Professionals Error:", error.message);
-
-            throw new ApiError(500, "Failed to fetch professionals");
+        // 🎯 Filter by city
+        if (query.city) {
+            matchStage.city = query.city;
         }
+
+        // 🎯 Filter by professionType
+        if (query.professionType) {
+            matchStage.professionType = {
+                $regex: query.professionType,
+                $options: "i"
+            };
+        }
+
+        // 💰 Fee filter
+        if (query.minFee || query.maxFee) {
+            matchStage.consultationFee = {};
+            if (query.minFee) matchStage.consultationFee.$gte = Number(query.minFee);
+            if (query.maxFee) matchStage.consultationFee.$lte = Number(query.maxFee);
+        }
+
+        const pipeline: any[] = [
+            { $match: matchStage },
+
+            // 🔗 join user
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "userId",
+                    foreignField: "_id",
+                    as: "userId"
+                }
+            },
+            { $unwind: "$userId" },
+
+            // 🔗 join services
+            {
+                $lookup: {
+                    from: "services",
+                    localField: "services",
+                    foreignField: "_id",
+                    as: "services"
+                }
+            },
+
+            // 🔍 SEARCH (name, title, professionType)
+            ...(query.search
+                ? [{
+                    $match: {
+                        $or: [
+                            { "userId.fullname": { $regex: query.search, $options: "i" } },
+                            { "professionType": { $regex: query.search, $options: "i" } },
+                            { "services.title": { $regex: query.search, $options: "i" } }
+                        ]
+                    }
+                }]
+                : []),
+
+            // 🔽 sorting
+            { $sort: { createdAt: -1 } },
+
+            // 📄 pagination
+            { $skip: skip },
+            { $limit: limit }
+        ];
+
+        const professionals = await Professional.aggregate(pipeline);
+
+        // 🔢 total count (separate pipeline)
+        const countPipeline = [
+            ...pipeline.filter(stage => !stage.$skip && !stage.$limit && !stage.$sort),
+            { $count: "total" }
+        ];
+
+        const countResult = await Professional.aggregate(countPipeline);
+        const total = countResult[0]?.total || 0;
+
+        return {
+            total,
+            page,
+            limit,
+            professionals
+        };
+
+    } catch (error: any) {
+        console.error("❌ Get Professionals Error:", error.message);
+        throw new ApiError(500, "Failed to fetch professionals");
     }
+}
 
     // ✅ GET SINGLE
     async getProfessionalById(id: string) {

@@ -65,4 +65,6 @@ const professionalSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 professionalSchema.index({ city: 1, professionType: 1 });
+professionalSchema.index({ fullname: "text" });
+professionalSchema.index({ title: "text" });
 export const Professional = mongoose.model("Professional", professionalSchema);

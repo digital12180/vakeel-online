@@ -8,7 +8,6 @@ const controller = new ProfessionalController();
 router.route("/")
     .get(controller.getAllProfessionals);
 
-// ✅ CREATE (User or Admin)
 router.route("/")
     .post(verifyToken, adminAndprofessional, controller.createProfessional);
 
