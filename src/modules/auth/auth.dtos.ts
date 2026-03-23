@@ -106,7 +106,9 @@ export interface RegisterProfessionalDto {
 }
 
 export interface RequestDTO {
-    
+    fullname: string,
+    email: string,
+    phone: string,
     category: string,
     city: string,
     language: string,
