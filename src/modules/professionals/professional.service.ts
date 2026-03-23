@@ -302,7 +302,7 @@ export class ProfessionalService {
 
             // 🔥 validate fields if provided
             if (data.professionType) {
-                const allowedTypes = ["lawyer", "ca", "cs"];
+                const allowedTypes = ["Lawyer / Advocate", "Chartered Accountant", "Company Secretary"];
                 if (!allowedTypes.includes(data.professionType)) {
                     throw new ApiError(400, "Invalid professionType");
                 }
@@ -460,7 +460,7 @@ export class ProfessionalService {
         return professional;
     }
 
-      async updateCertificate(
+    async updateCertificate(
         professionalId: string,
         file?: Express.Multer.File
     ) {
