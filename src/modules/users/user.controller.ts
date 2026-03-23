@@ -2,7 +2,7 @@ import { UserService } from "./user.service.js"
 import type { Request, Response } from "express";
 import { ApiError } from "../../utils/apiError.js";
 
-export class ProfessionalController {
+export class UserController {
     private userService: UserService;
     constructor() {
         this.userService = new UserService();

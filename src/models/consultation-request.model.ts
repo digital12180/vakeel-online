@@ -2,7 +2,9 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IConsultationRequest extends Document {
     userId: mongoose.Types.ObjectId;
-
+    fullname: string;
+    email: string;
+    phone: string
     category: "legal" | "finance" | "corporate";
     serviceId?: mongoose.Types.ObjectId;
 
@@ -26,7 +28,9 @@ export interface IConsultationRequest extends Document {
 
 const consultationSchema = new Schema<IConsultationRequest>({
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    
+    fullname: { type: String, required: true, trim: true },
+    email: { type: String, required: true, trim: true },
+    phone: { type: String, required: true, trim: true },
     category: { type: String, enum: ["legal", "finance", "corporate"], required: true },
 
     serviceId: { type: Schema.Types.ObjectId, ref: "Service" },

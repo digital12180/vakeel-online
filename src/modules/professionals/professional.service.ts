@@ -3,8 +3,11 @@ import { Professional } from "../../models/professional.model.js";
 import type { IProfessional } from "../../models/professional.model.js";
 import { ApiError } from "../../utils/apiError.js";
 import { User } from "../../models/user.model.js";
-import bcrypt from "bcryptjs"
 import type { ProRegisterDto } from "../auth/auth.dtos.js";
+import { uploadToCloudinary } from "../../utils/cloudinary.js";
+import { deleteFromCloudinary } from "../../utils/deleteImage.js";
+import bcrypt from "bcryptjs";
+
 
 export class ProfessionalService {
 
@@ -120,34 +123,50 @@ export class ProfessionalService {
     //         throw new ApiError(500, "Failed to create professional");
     //     }
     // }
-    async adminCreateProfessional(adminId: string, dto: ProRegisterDto) {
-        const existing = await User.findOne({ email: dto.email });
 
-        if (existing) {
+    async adminCreateProfessional(
+        adminId: string,
+        dto: ProRegisterDto,
+        file: Express.Multer.File
+    ) {
+        // ✅ Check in BOTH collections (important)
+        const existingUser = await User.findOne({ email: dto.email });
+        const existingProfessional = await Professional.findOne({ email: dto.email });
+
+        if (existingUser || existingProfessional) {
             throw new ApiError(409, "Professional already exists");
         }
 
+        // ✅ Upload certificate to Cloudinary
+        const uploadResult: any = await uploadToCloudinary(file.buffer);
+
+        // ✅ Hash password
         const hashed = await bcrypt.hash(dto.password, 10);
 
+        // ✅ Create professional
         const professional = await Professional.create({
             fullname: dto.fullname,
-            email: dto.email,
+            email: dto.email.toLowerCase().trim(),
             password: hashed,
             phone: dto.phone,
             role: "professional",
-            certificate: dto.certificate,
+
+            // 🔥 Save Cloudinary URL
+            certificate: uploadResult.secure_url,
+
             professionType: dto.professionType,
             experience: dto.experience,
             city: dto.city,
             languages: dto.languages,
-            createdBy: adminId,
+            createdBy: new mongoose.Types.ObjectId(adminId),
             services: dto.services,
-            consultationFee:dto.consultationFee,
-            practiceArea:dto.practiceArea,
-            isActive: true // ✅ direct active
+            consultationFee: dto.consultationFee,
+            practiceArea: dto.practiceArea,
+            isActive: true,
+            status: "approved" // since admin is creating
         });
 
-        return { professional };
+        return professional;
     }
 
     // ✅ GET ALL
@@ -398,5 +417,86 @@ export class ProfessionalService {
 
             throw new ApiError(500, "Failed to delete professional");
         }
+    }
+
+
+    async updateCertificateByAdmin(
+        professionalId: string,
+        file?: Express.Multer.File
+    ) {
+        // ✅ Check ID
+        if (!mongoose.Types.ObjectId.isValid(professionalId)) {
+            throw new ApiError(400, "Invalid professional ID");
+        }
+
+        // ✅ Find existing professional
+        const professional = await Professional.findById(professionalId);
+
+        if (!professional) {
+            throw new ApiError(404, "Professional not found");
+        }
+
+        let newImageUrl = professional.certificate;
+        let newImage = "";
+
+        // ✅ If new file uploaded
+        if (file) {
+            // 🔥 Upload new image
+            const uploadResult: any = await uploadToCloudinary(file.buffer);
+
+            newImage = uploadResult.secure_url;
+
+            // 🔥 Delete old image (IMPORTANT)
+            if (newImageUrl) {
+                await deleteFromCloudinary(newImageUrl);
+            }
+        }
+        // ✅ Update image
+        professional.certificate = newImage;
+
+
+        await professional.save();
+
+        return professional;
+    }
+
+      async updateCertificate(
+        professionalId: string,
+        file?: Express.Multer.File
+    ) {
+        // ✅ Check ID
+        if (!mongoose.Types.ObjectId.isValid(professionalId)) {
+            throw new ApiError(400, "Invalid professional ID");
+        }
+
+        // ✅ Find existing professional
+        const professional = await Professional.findById(professionalId);
+
+        if (!professional) {
+            throw new ApiError(404, "Professional not found");
+        }
+
+        let newImageUrl = professional.certificate;
+        let newImage = "";
+
+        // ✅ If new file uploaded
+        if (file) {
+            // 🔥 Upload new image
+            const uploadResult: any = await uploadToCloudinary(file.buffer);
+
+            newImage = uploadResult.secure_url;
+
+            // 🔥 Delete old image (IMPORTANT)
+            if (newImageUrl) {
+                await deleteFromCloudinary(newImageUrl);
+            }
+        }
+        // ✅ Update image
+        professional.certificate = newImage;
+
+
+        await professional.save();
+
+        return professional;
     }
 }

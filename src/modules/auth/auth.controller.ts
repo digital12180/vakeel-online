@@ -39,7 +39,13 @@ export class AuthController {
   ProfessionalRegister = async (req: Request, res: Response, next: NextFunction): Promise<void | Response> => {
     try {
       const registerDto: ProRegisterDto = req.body;
-      const result = await this.authService.ProfessionalRegister(registerDto)
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "Certificate required",
+        });
+      }
+      const result = await this.authService.ProfessionalRegister(registerDto, req.file)
 
       return ApiResponse.success(res, result, 'Registration successful');
     } catch (error) {

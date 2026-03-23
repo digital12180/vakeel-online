@@ -16,6 +16,7 @@ import type {
 import { ApiError } from '../../utils/apiError.js';
 import { User } from '../../models/user.model.js';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../../responses/message.js';
+import { uploadToCloudinary } from '../../utils/cloudinary.js';
 
 export class AuthService {
     // ==================== STEP 3: REGISTER ====================
@@ -138,13 +139,12 @@ export class AuthService {
         }
     }
 
-    async ProfessionalRegister(dto: ProRegisterDto) {
+    async ProfessionalRegister(dto: ProRegisterDto, file: Express.Multer.File) {
         const {
             fullname,
             email,
             password,
             phone,
-            certificate,
             professionType,
             experience,
             city,
@@ -152,7 +152,7 @@ export class AuthService {
         } = dto;
 
         // ✅ validations
-        if (!fullname || !email || !password || !certificate || !phone) {
+        if (!fullname || !email || !password || !phone) {
             throw new ApiError(400, "All required fields missing");
         }
 
@@ -163,7 +163,7 @@ export class AuthService {
 
         const hashed = await bcrypt.hash(password, 10);
 
-
+        const uploadfile: any = await uploadToCloudinary(file.buffer)
         // ✅ create professional profile (inactive by default)
         const professional = await Professional.create({
             fullname,
@@ -171,7 +171,7 @@ export class AuthService {
             password: hashed,
             phone,
             role: "professional",
-            certificate,
+            certificate: uploadfile.secure_url,
             professionType,
             experience,
             city,
