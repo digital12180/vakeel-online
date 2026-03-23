@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface IPayment extends Document {
+
     userId: mongoose.Types.ObjectId;
     consultationId: mongoose.Types.ObjectId;
 
@@ -13,7 +14,10 @@ export interface IPayment extends Document {
     status: "pending" | "success" | "failed";
 
     paidAt?: Date;
+    retryCount:number;
+    parentPaymentId:mongoose.Types.ObjectId;
 }
+// models/payment.model.t
 
 const paymentSchema = new Schema<IPayment>({
     userId: {
@@ -51,8 +55,16 @@ const paymentSchema = new Schema<IPayment>({
         default: "pending"
     },
 
-    paidAt: Date
+    paidAt: Date,
+    retryCount: {
+        type: Number,
+        default: 0
+    },
 
+    parentPaymentId: {
+        type: Schema.Types.ObjectId,
+        ref: "Payment"
+    }
 }, { timestamps: true });
 
 export const Payment = mongoose.model("Payment", paymentSchema);

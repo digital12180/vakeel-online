@@ -26,7 +26,7 @@ export interface IConsultationRequest extends Document {
 
 const consultationSchema = new Schema<IConsultationRequest>({
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-
+    
     category: { type: String, enum: ["legal", "finance", "corporate"], required: true },
 
     serviceId: { type: Schema.Types.ObjectId, ref: "Service" },

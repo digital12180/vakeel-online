@@ -2,219 +2,251 @@ import mongoose from "mongoose";
 import { Professional } from "../../models/professional.model.js";
 import type { IProfessional } from "../../models/professional.model.js";
 import { ApiError } from "../../utils/apiError.js";
+import { User } from "../../models/user.model.js";
+import bcrypt from "bcryptjs"
+import type { ProRegisterDto } from "../auth/auth.dtos.js";
 
 export class ProfessionalService {
 
     // ✅ CREATE
-    async createProfessional(data: Partial<IProfessional>) {
-        try {
-            // 🔥 Required fields check
-            const requiredFields = [
-                "userId",
-                "professionType",
-                "experience",
-                "city",
-                "consultationFee",
-                "practiceArea"
-            ];
+    // async createProfessional(data: Partial<IProfessional>) {
+    //     try {
+    //         // 🔥 Required fields check
+    //         const requiredFields = [
+    //             "userId",
+    //             "professionType",
+    //             "experience",
+    //             "city",
+    //             "consultationFee",
+    //             "practiceArea"
+    //         ];
 
-            for (const field of requiredFields) {
-                if (!data[field as keyof IProfessional]) {
-                    throw new ApiError(400, `${field} is required`);
-                }
-            }
+    //         for (const field of requiredFields) {
+    //             if (!data[field as keyof IProfessional]) {
+    //                 throw new ApiError(400, `${field} is required`);
+    //             }
+    //         }
 
-            if (!mongoose.Types.ObjectId.isValid(String(data.userId))) {
-                throw new ApiError(400, "Invalid userId");
-            }
-            const allowedTypes = ['All', 'Lawyer / Advocate', 'Chartered Accountant', 'Company Secretary'];
-            if (!allowedTypes.includes(String(data.professionType))) {
-                throw new ApiError(400, "Invalid professionType");
-            }
+    //         if (!mongoose.Types.ObjectId.isValid(String(data.userId))) {
+    //             throw new ApiError(400, "Invalid userId");
+    //         }
+    //         const allowedTypes = ['All', 'Lawyer / Advocate', 'Chartered Accountant', 'Company Secretary'];
+    //         if (!allowedTypes.includes(String(data.professionType))) {
+    //             throw new ApiError(400, "Invalid professionType");
+    //         }
 
-            if (data.experience! < 0 || data.experience! > 60) {
-                throw new ApiError(400, "Invalid experience value");
-            }
+    //         if (data.experience! < 0 || data.experience! > 60) {
+    //             throw new ApiError(400, "Invalid experience value");
+    //         }
 
-            if (data.consultationFee! < 0) {
-                throw new ApiError(400, "Invalid consultation fee");
-            }
+    //         if (data.consultationFee! < 0) {
+    //             throw new ApiError(400, "Invalid consultation fee");
+    //         }
 
-            // normalize languages
-            if (data.languages !== undefined && data.languages !== null) {
-                let langInput = data.languages;
+    //         // normalize languages
+    //         if (data.languages !== undefined && data.languages !== null) {
+    //             let langInput = data.languages;
 
-                // 🔥 FORCE STRING BEFORE SPLIT
-                if (typeof langInput === "string" || langInput instanceof String) {
-                    data.languages = String(langInput)
-                        .split(",")
-                        .map((l) => l.trim());
-                }
-                else if (Array.isArray(langInput)) {
-                    data.languages = langInput
-                        .map((l) => String(l).trim())
-                        .flatMap((l) => l.includes(",") ? l.split(",") : l); // 🔥 handle ["English, Hindi"]
-                }
-                else {
-                    throw new ApiError(400, "Languages must be string or array");
-                }
+    //             // 🔥 FORCE STRING BEFORE SPLIT
+    //             if (typeof langInput === "string" || langInput instanceof String) {
+    //                 data.languages = String(langInput)
+    //                     .split(",")
+    //                     .map((l) => l.trim());
+    //             }
+    //             else if (Array.isArray(langInput)) {
+    //                 data.languages = langInput
+    //                     .map((l) => String(l).trim())
+    //                     .flatMap((l) => l.includes(",") ? l.split(",") : l); // 🔥 handle ["English, Hindi"]
+    //             }
+    //             else {
+    //                 throw new ApiError(400, "Languages must be string or array");
+    //             }
 
-                data.languages = data.languages
-                    .map((l: string) => l.trim())
-                    .filter((l: string) => l)
-                    .filter((v: string, i: number, arr: string[]) => arr.indexOf(v) === i);
-            }
+    //             data.languages = data.languages
+    //                 .map((l: string) => l.trim())
+    //                 .filter((l: string) => l)
+    //                 .filter((v: string, i: number, arr: string[]) => arr.indexOf(v) === i);
+    //         }
 
-            if (data.services !== undefined && data.services !== null) {
-                let normalizedServices: string[] = [];
+    //         if (data.services !== undefined && data.services !== null) {
+    //             let normalizedServices: string[] = [];
 
-                // ✅ string case
-                if (typeof data.services === "string" || normalizedServices instanceof String) {
-                    normalizedServices = String(data.services).split(",");
-                }
+    //             // ✅ string case
+    //             if (typeof data.services === "string" || normalizedServices instanceof String) {
+    //                 normalizedServices = String(data.services).split(",");
+    //             }
 
-                // ✅ array case
-                else if (Array.isArray(data.services)) {
-                    normalizedServices = data.services.flatMap((s) =>
-                        String(s).includes(",")
-                            ? String(s).split(",")
-                            : String(s)
-                    );
-                }
+    //             // ✅ array case
+    //             else if (Array.isArray(data.services)) {
+    //                 normalizedServices = data.services.flatMap((s) =>
+    //                     String(s).includes(",")
+    //                         ? String(s).split(",")
+    //                         : String(s)
+    //                 );
+    //             }
 
-                // ❌ invalid
-                else {
-                    throw new ApiError(400, "Services must be string or array");
-                }
+    //             // ❌ invalid
+    //             else {
+    //                 throw new ApiError(400, "Services must be string or array");
+    //             }
 
-                // ✅ clean + convert to ObjectId
-                const objectIds = normalizedServices
-                    .map((s) => s.trim())
-                    .filter((s) => mongoose.Types.ObjectId.isValid(s))
-                    .map((s) => new mongoose.Types.ObjectId(s));
+    //             // ✅ clean + convert to ObjectId
+    //             const objectIds = normalizedServices
+    //                 .map((s) => s.trim())
+    //                 .filter((s) => mongoose.Types.ObjectId.isValid(s))
+    //                 .map((s) => new mongoose.Types.ObjectId(s));
 
-                if (objectIds.length === 0) {
-                    throw new ApiError(400, "Invalid service IDs");
-                }
+    //             if (objectIds.length === 0) {
+    //                 throw new ApiError(400, "Invalid service IDs");
+    //             }
 
-                data.services = objectIds;
-            }
+    //             data.services = objectIds;
+    //         }
 
-            const existing = await Professional.findOne({ userId: data.userId });
-            if (existing) {
-                throw new ApiError(409, "Professional profile already exists");
-            }
-            data.createdBy = data.userId;
-            const professional = await Professional.create(data);
+    //         const existing = await Professional.findOne({ userId: data.userId });
+    //         if (existing) {
+    //             throw new ApiError(409, "Professional profile already exists");
+    //         }
+    //         data.createdBy = data.userId;
+    //         const professional = await Professional.create(data);
 
-            return professional;
+    //         return professional;
 
-        } catch (error: any) {
-            console.error("❌ Create Professional Error:", error.message);
+    //     } catch (error: any) {
+    //         console.error("❌ Create Professional Error:", error.message);
 
-            if (error instanceof ApiError) throw error;
+    //         if (error instanceof ApiError) throw error;
 
-            throw new ApiError(500, "Failed to create professional");
+    //         throw new ApiError(500, "Failed to create professional");
+    //     }
+    // }
+    async adminCreateProfessional(adminId: string, dto: ProRegisterDto) {
+        const existing = await User.findOne({ email: dto.email });
+
+        if (existing) {
+            throw new ApiError(409, "Professional already exists");
         }
+
+        const hashed = await bcrypt.hash(dto.password, 10);
+
+        const professional = await Professional.create({
+            fullname: dto.fullname,
+            email: dto.email,
+            password: hashed,
+            phone: dto.phone,
+            role: "professional",
+            certificate: dto.certificate,
+            professionType: dto.professionType,
+            experience: dto.experience,
+            city: dto.city,
+            languages: dto.languages,
+            createdBy: adminId,
+            services: dto.services,
+            consultationFee:dto.consultationFee,
+            practiceArea:dto.practiceArea,
+            isActive: true // ✅ direct active
+        });
+
+        return { professional };
     }
 
     // ✅ GET ALL
     async getAllProfessionals(query: any) {
-    try {
-        const page = Math.max(1, Number(query.page) || 1);
-        const limit = Math.max(1, Number(query.limit) || 10);
-        const skip = (page - 1) * limit;
+        try {
+            const page = Math.max(1, Number(query.page) || 1);
+            const limit = Math.max(1, Number(query.limit) || 10);
+            const skip = (page - 1) * limit;
 
-        const matchStage: any = { isActive: true };
+            const matchStage: any = { isActive: true };
 
-        // 🎯 Filter by city
-        if (query.city) {
-            matchStage.city = query.city;
-        }
+            // 🎯 Filter by city
+            if (query.city) {
+                matchStage.city = query.city;
+            }
 
-        // 🎯 Filter by professionType
-        if (query.professionType) {
-            matchStage.professionType = {
-                $regex: query.professionType,
-                $options: "i"
-            };
-        }
+            // 🎯 Filter by professionType
+            if (query.professionType) {
+                matchStage.professionType = {
+                    $regex: query.professionType,
+                    $options: "i"
+                };
+            }
 
-        // 💰 Fee filter
-        if (query.minFee || query.maxFee) {
-            matchStage.consultationFee = {};
-            if (query.minFee) matchStage.consultationFee.$gte = Number(query.minFee);
-            if (query.maxFee) matchStage.consultationFee.$lte = Number(query.maxFee);
-        }
+            // 💰 Fee filter
+            if (query.minFee || query.maxFee) {
+                matchStage.consultationFee = {};
+                if (query.minFee) matchStage.consultationFee.$gte = Number(query.minFee);
+                if (query.maxFee) matchStage.consultationFee.$lte = Number(query.maxFee);
+            }
 
-        const pipeline: any[] = [
-            { $match: matchStage },
+            const pipeline: any[] = [
+                { $match: matchStage },
 
-            // 🔗 join user
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "userId",
-                    foreignField: "_id",
-                    as: "userId"
-                }
-            },
-            { $unwind: "$userId" },
-
-            // 🔗 join services
-            {
-                $lookup: {
-                    from: "services",
-                    localField: "services",
-                    foreignField: "_id",
-                    as: "services"
-                }
-            },
-
-            // 🔍 SEARCH (name, title, professionType)
-            ...(query.search
-                ? [{
-                    $match: {
-                        $or: [
-                            { "userId.fullname": { $regex: query.search, $options: "i" } },
-                            { "professionType": { $regex: query.search, $options: "i" } },
-                            { "services.title": { $regex: query.search, $options: "i" } }
-                        ]
+                // 🔗 join user
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "userId",
+                        foreignField: "_id",
+                        as: "userId"
                     }
-                }]
-                : []),
+                },
+                { $unwind: "$userId" },
 
-            // 🔽 sorting
-            { $sort: { createdAt: -1 } },
+                // 🔗 join services
+                {
+                    $lookup: {
+                        from: "services",
+                        localField: "services",
+                        foreignField: "_id",
+                        as: "services"
+                    }
+                },
 
-            // 📄 pagination
-            { $skip: skip },
-            { $limit: limit }
-        ];
+                // 🔍 SEARCH (name, title, professionType)
+                ...(query.search
+                    ? [{
+                        $match: {
+                            $or: [
+                                { "userId.fullname": { $regex: query.search, $options: "i" } },
+                                { "professionType": { $regex: query.search, $options: "i" } },
+                                { "services.title": { $regex: query.search, $options: "i" } }
+                            ]
+                        }
+                    }]
+                    : []),
 
-        const professionals = await Professional.aggregate(pipeline);
+                // 🔽 sorting
+                { $sort: { createdAt: -1 } },
 
-        // 🔢 total count (separate pipeline)
-        const countPipeline = [
-            ...pipeline.filter(stage => !stage.$skip && !stage.$limit && !stage.$sort),
-            { $count: "total" }
-        ];
+                // 📄 pagination
+                { $skip: skip },
+                { $limit: limit }
+            ];
 
-        const countResult = await Professional.aggregate(countPipeline);
-        const total = countResult[0]?.total || 0;
+            const professionals = await Professional.aggregate(pipeline);
 
-        return {
-            total,
-            page,
-            limit,
-            professionals
-        };
+            // 🔢 total count (separate pipeline)
+            const countPipeline = [
+                ...pipeline.filter(stage => !stage.$skip && !stage.$limit && !stage.$sort),
+                { $count: "total" }
+            ];
 
-    } catch (error: any) {
-        console.error("❌ Get Professionals Error:", error.message);
-        throw new ApiError(500, "Failed to fetch professionals");
+            const countResult = await Professional.aggregate(countPipeline);
+            const total = countResult[0]?.total || 0;
+
+            return {
+                total,
+                page,
+                limit,
+                professionals
+            };
+
+        } catch (error: any) {
+            console.error("❌ Get Professionals Error:", error.message);
+            throw new ApiError(500, "Failed to fetch professionals");
+        }
     }
-}
 
     // ✅ GET SINGLE
     async getProfessionalById(id: string) {

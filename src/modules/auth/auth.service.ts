@@ -1,4 +1,5 @@
-import { generateToken } from '../../middlewares/auth.middleware.js';
+import { generateToken, refreshToken } from '../../middlewares/auth.middleware.js';
+import { Professional } from '../../models/professional.model.js';
 import bcrypt from "bcryptjs"
 import type {
     RegisterDto,
@@ -6,7 +7,11 @@ import type {
     ForgotPasswordDto,
     ResetPasswordDto,
     RegisterResponseDto,
-    LoginResponseDto
+    UserLoginResponseDto,
+    ProLoginResponseDto,
+    AdminLoginResponseDto,
+    ProRegisterDto,
+    RegisterProfessionalDto
 } from './auth.dtos.js';
 import { ApiError } from '../../utils/apiError.js';
 import { User } from '../../models/user.model.js';
@@ -14,7 +19,7 @@ import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../../responses/message.js';
 
 export class AuthService {
     // ==================== STEP 3: REGISTER ====================
-    async register(registerDto: RegisterDto): Promise<RegisterResponseDto> {
+    async UserRegister(registerDto: RegisterDto): Promise<RegisterResponseDto> {
         const { fullname, email, password, phone } = registerDto;
 
         try {
@@ -76,19 +81,15 @@ export class AuthService {
         }
     }
 
-    // ==================== STEP 4: LOGIN ====================
-    async login(loginDto: LoginDto): Promise<LoginResponseDto> {
+    async AdminRegister(registerDto: RegisterDto): Promise<RegisterResponseDto> {
+        const { fullname, email, password } = registerDto;
+
         try {
-            const { email, password } = loginDto;
-            if (!email) {
-                throw new ApiError(401, ERROR_MESSAGES.EMAIL_REQUIRED);
-            }
-            if (!password) {
-                throw new ApiError(401, ERROR_MESSAGES.PASSWORD_REQUIRED);
-            }
+
+            // ✅ Validate email
             const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
             if (!isValidEmail) {
-                throw new ApiError(400, ERROR_MESSAGES.INVALID_EMAIL);
+                throw new ApiError(400, "Invalid email format");
             }
             const strongPassword = /^(?=.*?[0-9])(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[^0-9A-Za-z]).{8,32}$/
 
@@ -96,37 +97,181 @@ export class AuthService {
             if (!isStrongPassword) {
                 throw new ApiError(400, "Password must conatin at least one lowercase , uppercase ,special character ,digit. length should be 8 character. ");
             }
-            let user = await User.findOne({ email: email }).select("-__v");
-
-            // ❌ If still no user
-            if (!user) {
-                console.log("❌ ERROR: No user found for email:", email);
-                throw new ApiError(401, ERROR_MESSAGES.INVALID_CREDENTIALS);
+            // ✅ Check if user already exists
+            const existingUser = await User.findOne({ email: email }).select("-password");
+            if (existingUser) {
+                throw new ApiError(409, "User already exists with this email");
             }
 
+            // ✅ Hash password
+            const hashedPassword = await bcrypt.hash(password, 10);
 
-            // ✅ Verify password
-            const isValidPassword = await bcrypt.compare(password, user.password);
-            if (!isValidPassword) {
-                throw new ApiError(401, ERROR_MESSAGES.PASSWORDS_DONT_MATCH);
-            }
-            const accessToken = await generateToken(user);
-            const refreshToken = await generateToken(user, '30d');
-            const userObj = user.toObject();
-            delete userObj.password;
+            // ✅ Create user object
+            const userData: any = {
+                fullname,
+                email,
+                password: hashedPassword,
+                role: "admin",
+            };
+
+            // ✅ Save user
+            const user = await User.create(userData);
+
+            console.log("✅ Admin registered:", {
+                id: user._id,
+                email: user.email
+            });
+
             return {
-                user: userObj,
-                accessToken: accessToken,
-                refreshToken: refreshToken,
-                expiresIn: 7 * 24 * 60 * 60,
+                _id: user._id,
+                fullname: user.fullname,
+                email: user.email,
+                role: user.role ?? "admin"
             }
-        } catch (error) {
-            console.error("❌ Login error:", error);
+        } catch (error: any) {
+            console.error("❌ Register error:", error.message);
             if (error instanceof ApiError) {
                 throw error;
             }
-            throw new ApiError(500, "User Login failed");
+
+            throw new ApiError(500, "User registration failed");
         }
+    }
+
+    async ProfessionalRegister(dto: ProRegisterDto) {
+        const {
+            fullname,
+            email,
+            password,
+            phone,
+            certificate,
+            professionType,
+            experience,
+            city,
+            languages
+        } = dto;
+
+        // ✅ validations
+        if (!fullname || !email || !password || !certificate || !phone) {
+            throw new ApiError(400, "All required fields missing");
+        }
+
+        const existing = await User.findOne({ email });
+        if (existing) {
+            throw new ApiError(409, "Email already exists");
+        }
+
+        const hashed = await bcrypt.hash(password, 10);
+
+
+        // ✅ create professional profile (inactive by default)
+        const professional = await Professional.create({
+            fullname,
+            email,
+            password: hashed,
+            phone,
+            role: "professional",
+            certificate,
+            professionType,
+            experience,
+            city,
+            languages,
+            isActive: false // 🔥 IMPORTANT
+        });
+
+        return {
+            message: "Registered successfully. Waiting for admin approval",
+            professional
+        };
+    }
+
+    // ==================== STEP 4: LOGIN ====================
+    async login(loginDto: LoginDto) {
+        const { email, password } = loginDto;
+
+        if (!email || !password) {
+            throw new ApiError(400, "Email & Password required");
+        }
+        let accessToken = "";
+        let refreshToken = "";
+        let Data = {};
+        const user = await User.findOne({ email });
+
+        if (user) {
+            const isMatch = await bcrypt.compare(password, user.password);
+            if (!isMatch) {
+                throw new ApiError(401, "Invalid credentials");
+            }
+
+            const objData = user.toObject();
+            delete objData.password;
+            Data = objData;
+            accessToken = await generateToken({
+                id: user._id,
+                role: user.role,
+                email: user.email
+            });
+            refreshToken = await generateToken({
+                id: user._id,
+                role: user.role,
+                email: user.email
+            });
+        }
+        else if (!user) {
+            const professional = await Professional.findOne({ email });
+            const isMatch = await bcrypt.compare(password, professional.password);
+            if (!isMatch) {
+                throw new ApiError(401, "Invalid credentials");
+            }
+            const objData = professional.toObject();
+            delete objData.password;
+            Data = objData;
+
+            accessToken = await generateToken({
+                id: professional._id,
+                role: professional.role,
+                email: professional.email
+            });
+            refreshToken = await generateToken({
+                id: professional._id,
+                role: professional.role,
+                email: professional.email
+            });
+        } else {
+            throw new ApiError(401, "Invalid credentials");
+        }
+
+
+
+        // 🔥 PROFESSIONAL CHECK
+        // if (user.role === "professional") {
+        //     professionalData = await Professional.findOne({
+        //         userId: user._id
+        //     });
+
+        //     if (!professionalData) {
+        //         throw new ApiError(403, "Professional profile not found");
+        //     }
+
+        //     if (!professionalData.isActive) {
+        //         throw new ApiError(403, "Your account is not approved yet");
+        //     }
+        // }
+
+        // const accessToken = await generateToken({
+        //     id: user._id,
+        //     role: user.role
+        // });
+        // const refreshToken = await generateToken({
+        //     id: user._id,
+        //     role: user.role
+        // });
+
+        return {
+            user: Data,
+            accessToken,
+            refreshToken
+        };
     }
     // ==================== STEP 5: FORGOT PASSWORD ====================
     // async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<SendOtpResponseDto> {

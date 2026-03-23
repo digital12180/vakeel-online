@@ -9,7 +9,7 @@ router.route("/")
     .get(controller.getAllProfessionals);
 
 router.route("/")
-    .post(verifyToken, adminAndprofessional, controller.createProfessional);
+    .post(verifyToken,adminOnly, controller.createProfessional);
 
 // ✅ SINGLE PROFESSIONAL
 router.route("/:id")
@@ -17,6 +17,6 @@ router.route("/:id")
     .put(verifyToken, adminAndprofessional, controller.updateProfessional)
     .delete(verifyToken, adminOnly, controller.deleteProfessional);
 
-router.route('/soft-delete/:id').delete(verifyToken, adminOnly, controller.softdeleteProfessional)
+router.route('/soft-delete/:id').patch(verifyToken, adminOnly, controller.softdeleteProfessional)
 
 export default router;

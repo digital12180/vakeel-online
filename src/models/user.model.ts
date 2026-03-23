@@ -5,9 +5,10 @@ export interface IUser extends Document {
     email: string;
     password: string;
     phone?: string;
-    role: 'user';
+    role: string;
     createdAt: Date;
     updatedAt: Date;
+    certificate?:string;
 }
 
 const userSchema = new Schema<IUser>({
@@ -34,8 +35,11 @@ const userSchema = new Schema<IUser>({
     },
     role: {
         type: String,
-        enum: ['user','admin','professional'],
-        default: 'user'
+        enum: ['user', 'admin', 'professional'],
+        required:true
+    },
+    certificate: {
+        type: String, // URL (Cloudinary)
     },
 }, {
     timestamps: true
