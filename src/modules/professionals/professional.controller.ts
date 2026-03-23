@@ -117,7 +117,7 @@ export class ProfessionalController {
         }
     };
 
-    // DELETE (Soft)
+    // DELETE 
     deleteProfessional = async (req: Request, res: Response) => {
         try {
             const userId = req.user?._id || req.tokenData?.userId;
@@ -226,4 +226,5 @@ export class ProfessionalController {
             });
         }
     };
+
 }
