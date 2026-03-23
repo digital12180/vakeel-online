@@ -21,6 +21,7 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 
 
+
 // ==================== CREATE EXPRESS APP ====================
 const app = express();
 

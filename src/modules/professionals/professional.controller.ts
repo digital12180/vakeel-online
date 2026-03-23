@@ -11,28 +11,43 @@ export class ProfessionalController {
     createProfessional = async (req: Request, res: Response) => {
         try {
             const adminId = req.user?._id || req.tokenData?.userId;
+
             if (!adminId) {
-                return ApiError.unauthorized("Unauthorized user");
-            }
-            if (!req.body) {
-                return res.status(400).json({
+                return res.status(401).json({
                     success: false,
-                    message: "Data missing to create professional",
+                    message: "Unauthorized user",
                 });
             }
-            const role = req.user.role;
-            let data = req.body;
-            
-            const professional = await this.professionalService.adminCreateProfessional(adminId,data);
+
+            if (!req.file) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Certificate required",
+                });
+            }
+
+            const data = req.body;
+
+            const professional =
+                await this.professionalService.adminCreateProfessional(
+                    adminId,
+                    data,
+                    req.file
+                );
 
             return res.status(201).json({
                 success: true,
                 message: "Professional created successfully",
-                data: professional
+                data: professional,
             });
 
         } catch (error: any) {
-            res.status(500).json({ success: false, message: error.message });
+            console.error("❌ Create Professional Error:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: error.message,
+            });
         }
     };
 
@@ -143,6 +158,72 @@ export class ProfessionalController {
 
         } catch (error: any) {
             res.status(500).json({ success: false, message: error.message });
+        }
+    };
+
+    updateCertificateByAdmin = async (req: Request, res: Response) => {
+        try {
+            const professionalId = req.params.id;
+
+            if (!professionalId) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Professional ID required",
+                });
+            }
+
+            const updatedProfessional =
+                await this.professionalService.updateCertificateByAdmin(
+                    professionalId,
+                    req.file
+                );
+
+            return res.status(200).json({
+                success: true,
+                message: "Professional updated successfully",
+                data: updatedProfessional,
+            });
+
+        } catch (error: any) {
+            console.error("❌ Update Error:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: error.message,
+            });
+        }
+    };
+
+    updateCertificate = async (req: Request, res: Response) => {
+        try {
+            const professionalId = req.user._id || req.user.userId;
+
+            if (!professionalId) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Unauthorized Professional",
+                });
+            }
+
+            const updatedProfessional =
+                await this.professionalService.updateCertificate(
+                    professionalId,
+                    req.file
+                );
+
+            return res.status(200).json({
+                success: true,
+                message: "Professional updated successfully",
+                data: updatedProfessional,
+            });
+
+        } catch (error: any) {
+            console.error("❌ Update Error:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: error.message,
+            });
         }
     };
 }

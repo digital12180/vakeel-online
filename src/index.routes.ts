@@ -3,14 +3,16 @@ import serviceRoutes from "./modules/service/service.routes.js";
 import professionalRoutes from "./modules/professionals/professional.routes.js"
 import consultationRoutes from "./modules/consultations/consultation.routes.js";
 import paymentRoutes from "./modules/payments/payment.routes.js"
+import userRoutes from "./modules/users/user.routes.js";
 import { Router } from "express";
 
-const router=Router();
+const router = Router();
 
-router.use('/auth',authRoutes);
-router.use('/service',serviceRoutes);
-router.use('/professional',professionalRoutes);
-router.use('/consultation',consultationRoutes);
+router.use('/auth', authRoutes);
+router.use('/service', serviceRoutes);
+router.use('/professional', professionalRoutes);
+router.use('/consultation', consultationRoutes);
 router.use("/payment", paymentRoutes);
+router.use('/user', userRoutes);
 
 export default router;
