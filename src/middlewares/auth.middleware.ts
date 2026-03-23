@@ -5,6 +5,7 @@ import { User } from '../models/user.model.js';
 import { ROLES, ROLE_MAP, ROLE_REVERSE_MAP } from '../utils/constants.js';
 import { ERROR_MESSAGES } from '../responses/message.js';
 import { ApiResponse } from '../utils/apiResponse.js';
+import { Professional } from "../models/professional.model.js";
 
 // Interface for token data
 export interface TokenData {
@@ -129,11 +130,17 @@ export const verifyToken = async (
             console.error("❌ Invalid role in token:", decoded.role);
             return ApiResponse.error(res, ERROR_MESSAGES.INVALID_ROLE, 403);
         }
-
+        let user = "";
         // Find user in database
-        const user = await User.findById(decoded.userId)
-            .select('-password')
-            .lean();
+        if (roleName === "user"||roleName==="admin") {
+            user = await User.findById(decoded.userId)
+                .select('-password')
+                .lean();
+        } else if (roleName === "professional") {
+            user = await Professional.findById(decoded.userId)
+                .select('-password')
+                .lean();
+        }
 
         if (!user) {
             console.error("❌ User not found for ID:", decoded.userId);
@@ -151,7 +158,6 @@ export const verifyToken = async (
         // Also attach user directly to request for convenience
         req.user = user;
 
-        console.log("✅ Token verified successfully for user:", user.email || user.phone);
         next();
     } catch (error: any) {
         console.error('❌ Token Verification Error:', error.message);
@@ -196,8 +202,8 @@ export const checkRole = (allowedRoles: string[] = []) => {
 
 // ✅ Admin Only Middleware (Shortcut)
 export const adminOnly = checkRole([ROLES.admin]);
-export const userAndadmin=checkRole([ROLES.admin,ROLES.user]);
-export const adminAndprofessionalAnduser=checkRole([ROLES.admin,ROLES.user,ROLES.professional]);
+export const userAndadmin = checkRole([ROLES.admin, ROLES.user]);
+export const adminAndprofessionalAnduser = checkRole([ROLES.admin, ROLES.user, ROLES.professional]);
 
 export const adminAndprofessional = checkRole([ROLES.admin, ROLES.professional])
 // ✅ User Only Middleware (Shortcut)

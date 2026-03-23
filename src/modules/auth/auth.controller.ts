@@ -4,6 +4,7 @@ import { ApiResponse } from '../../utils/apiResponse.js';
 import { ApiError } from '../../utils/apiError.js';
 import type {
   RegisterDto,
+  ProRegisterDto,
   LoginDto,
 } from './auth.dtos.js';
 
@@ -15,10 +16,30 @@ export class AuthController {
   }
 
   // ==================== STEP 3: REGISTER USER ====================
-  register = async (req: Request, res: Response, next: NextFunction): Promise<void | Response> => {
+  UserRegister = async (req: Request, res: Response, next: NextFunction): Promise<void | Response> => {
     try {
       const registerDto: RegisterDto = req.body;
-      const result = await this.authService.register(registerDto)
+      const result = await this.authService.UserRegister(registerDto)
+
+      return ApiResponse.success(res, result, 'Registration successful');
+    } catch (error) {
+      next(error);
+    }
+  };
+  AdminRegister = async (req: Request, res: Response, next: NextFunction): Promise<void | Response> => {
+    try {
+      const registerDto: RegisterDto = req.body;
+      const result = await this.authService.AdminRegister(registerDto)
+
+      return ApiResponse.success(res, result, 'Registration successful');
+    } catch (error) {
+      next(error);
+    }
+  };
+  ProfessionalRegister = async (req: Request, res: Response, next: NextFunction): Promise<void | Response> => {
+    try {
+      const registerDto: ProRegisterDto = req.body;
+      const result = await this.authService.ProfessionalRegister(registerDto)
 
       return ApiResponse.success(res, result, 'Registration successful');
     } catch (error) {

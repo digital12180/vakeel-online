@@ -7,11 +7,11 @@ export class ProfessionalController {
     constructor() {
         this.professionalService = new ProfessionalService();
     }
-    // CREATE
+    // CREATE BY Admin
     createProfessional = async (req: Request, res: Response) => {
         try {
-            const userId = req.user?._id || req.tokenData?.userId;
-            if (!userId) {
+            const adminId = req.user?._id || req.tokenData?.userId;
+            if (!adminId) {
                 return ApiError.unauthorized("Unauthorized user");
             }
             if (!req.body) {
@@ -22,18 +22,8 @@ export class ProfessionalController {
             }
             const role = req.user.role;
             let data = req.body;
-
-            // 🔥 If normal user → force own userId
-            if (role === "professional") {
-                data.userId = userId;
-            }
-
-
-            // 🔥 If admin → can pass any userId
-            if (role === "admin" && !data.userId) {
-                throw new ApiError(400, "userId is required for admin");
-            }
-            const professional = await this.professionalService.createProfessional(data);
+            
+            const professional = await this.professionalService.adminCreateProfessional(adminId,data);
 
             return res.status(201).json({
                 success: true,
@@ -155,5 +145,4 @@ export class ProfessionalController {
             res.status(500).json({ success: false, message: error.message });
         }
     };
-    
 }

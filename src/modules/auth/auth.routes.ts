@@ -6,7 +6,9 @@ import { verifyToken } from "../../middlewares/auth.middleware.js";
 const router = Router();
 const authcontroller = new AuthController();
 
-router.route('/register').post(authcontroller.register);
+router.route('/user/register').post(authcontroller.UserRegister);
+router.route('/admin/register').post(authcontroller.AdminRegister);
+router.route('/professional/register').post(authcontroller.ProfessionalRegister);
 router.route('/login').post(authcontroller.login);
 router.route('/logout').post(verifyToken, authcontroller.logout);
 router.route('/refresh-token').get(verifyToken, authcontroller.refreshToken);
