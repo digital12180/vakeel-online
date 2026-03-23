@@ -13,13 +13,13 @@ router.route("/")
     .post(verifyToken, adminOnly, upload.single('certificate'), controller.createProfessional);
 
 // ✅ SINGLE PROFESSIONAL
-router.route("/:id")
+router.route("/")
     .get(controller.getProfessionalById)
-    .put(verifyToken, adminAndprofessional, controller.updateProfessional)
+    .put(verifyToken, professionalOnly, controller.updateProfessional)
     .delete(verifyToken, adminOnly, controller.deleteProfessional);
 
 router.route('/soft-delete/:id').patch(verifyToken, adminOnly, controller.softdeleteProfessional)
 router.route("/update-certificate/:id").patch(verifyToken, adminOnly, upload.single('certificate'), controller.updateCertificateByAdmin);
 router.route("/update-certificate").patch(verifyToken, professionalOnly, upload.single('certificate'), controller.updateCertificate)
-
+router.route("/:id").put(verifyToken, adminOnly, controller.updateProfessionalByAdmin)
 export default router;

@@ -367,6 +367,8 @@ export class ProfessionalService {
         }
     }
 
+
+
     // ✅ DELETE (SOFT DELETE)
     async softdeleteProfessional(id: string) {
         try {

@@ -91,12 +91,13 @@ export class ProfessionalController {
     };
 
     // UPDATE
-    updateProfessional = async (req: Request, res: Response) => {
+    updateProfessionalByAdmin = async (req: Request, res: Response) => {
         try {
             const userId = req.user?._id || req.tokenData?.userId;
             if (!userId) {
                 return ApiError.unauthorized("Unauthorized user");
             }
+
             if (!req.params.id) {
                 return res.status(404).json({ message: "Professional id not provided" });
             }
@@ -116,6 +117,54 @@ export class ProfessionalController {
             res.status(500).json({ success: false, message: error.message });
         }
     };
+    updateProfessional = async (req: Request, res: Response) => {
+        try {
+            const userId = req.user?._id || req.tokenData?.userId;
+            if (!userId) {
+                return ApiError.unauthorized("Unauthorized user");
+            }
+
+            const updated = await this.professionalService.updateProfessional(
+                userId,
+                req.body
+            );
+
+            res.status(200).json({
+                success: true,
+                message: "Updated successfully",
+                data: updated
+            });
+
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    };
+
+    // updateProfessional = async (req: Request, res: Response) => {
+    //     try {
+    //         const userId = req.user?._id || req.tokenData?.userId;
+    //         if (!userId) {
+    //             return ApiError.unauthorized("Unauthorized user");
+    //         }
+    //         // if (!req.params.id) {
+    //         //     return res.status(404).json({ message: "Professional id not provided" });
+    //         // }
+
+    //         const updated = await this.professionalService.updateProfessional(
+    //             userId,
+    //             req.body
+    //         );
+
+    //         res.status(200).json({
+    //             success: true,
+    //             message: "Updated successfully",
+    //             data: updated
+    //         });
+
+    //     } catch (error: any) {
+    //         res.status(500).json({ success: false, message: error.message });
+    //     }
+    // };
 
     // DELETE 
     deleteProfessional = async (req: Request, res: Response) => {
