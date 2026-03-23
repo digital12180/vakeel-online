@@ -198,50 +198,44 @@ export class ProfessionalService {
                 if (query.maxFee) matchStage.consultationFee.$lte = Number(query.maxFee);
             }
 
-            const pipeline: any[] = [
-                { $match: matchStage },
+           const pipeline: any[] = [
+  { $match: matchStage },
 
-                // 🔗 join user
-                {
-                    $lookup: {
-                        from: "users",
-                        localField: "userId",
-                        foreignField: "_id",
-                        as: "userId"
-                    }
-                },
-                { $unwind: "$userId" },
+  {
+    $lookup: {
+      from: "services",
+      localField: "services",
+      foreignField: "_id",
+      as: "services"
+    }
+  },
 
-                // 🔗 join services
-                {
-                    $lookup: {
-                        from: "services",
-                        localField: "services",
-                        foreignField: "_id",
-                        as: "services"
-                    }
-                },
+  ...(query.search
+    ? [{
+        $match: {
+          $or: [
+            { fullname: { $regex: query.search, $options: "i" } },
+            { professionType: { $regex: query.search, $options: "i" } },
+            { "services.title": { $regex: query.search, $options: "i" } }
+          ]
+        }
+      }]
+    : []),
 
-                // 🔍 SEARCH (name, title, professionType)
-                ...(query.search
-                    ? [{
-                        $match: {
-                            $or: [
-                                { "userId.fullname": { $regex: query.search, $options: "i" } },
-                                { "professionType": { $regex: query.search, $options: "i" } },
-                                { "services.title": { $regex: query.search, $options: "i" } }
-                            ]
-                        }
-                    }]
-                    : []),
+  // 🔐 REMOVE SENSITIVE DATA
+  {
+    $project: {
+      password: 0,
+      certificate: 0,
+      certificatePublicId: 0,
+      __v: 0
+    }
+  },
 
-                // 🔽 sorting
-                { $sort: { createdAt: -1 } },
-
-                // 📄 pagination
-                { $skip: skip },
-                { $limit: limit }
-            ];
+  { $sort: { createdAt: -1 } },
+  { $skip: skip },
+  { $limit: limit }
+];
 
             const professionals = await Professional.aggregate(pipeline);
 
