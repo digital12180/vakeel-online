@@ -15,7 +15,7 @@ export interface ProRegisterDto {
     role: string;
     phone: string;
     consultationFee: number;
-    services: mongoose.Types.ObjectId[];
+    serviceId: mongoose.Types.ObjectId;
     practiceArea: string[];
     certificate: string;
     professionType: string;
