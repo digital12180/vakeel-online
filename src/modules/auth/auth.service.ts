@@ -139,7 +139,8 @@ export class AuthService {
         }
     }
 
-    async ProfessionalRegister(dto: ProRegisterDto, file: Express.Multer.File) {
+   async ProfessionalRegister(dto: ProRegisterDto, file?: Express.Multer.File) {
+    try {
         const {
             fullname,
             email,
@@ -151,40 +152,62 @@ export class AuthService {
             languages
         } = dto;
 
-        // ✅ validations
+        // ✅ Required fields
         if (!fullname || !email || !password || !phone) {
             throw new ApiError(400, "All required fields missing");
         }
 
-        const existing = await User.findOne({ email });
-        if (existing) {
+        // ✅ File validation
+        if (!file) {
+            throw new ApiError(400, "Certificate is required");
+        }
+
+        // ✅ Check duplicate (both collections 🔥)
+        const existingUser = await User.findOne({ email });
+        const existingProfessional = await Professional.findOne({ email });
+
+        if (existingUser || existingProfessional) {
             throw new ApiError(409, "Email already exists");
         }
 
+        // ✅ Hash password
         const hashed = await bcrypt.hash(password, 10);
 
-        const uploadfile: any = await uploadToCloudinary(file.buffer)
-        // ✅ create professional profile (inactive by default)
+        // ✅ Upload to Cloudinary
+        const uploadResult: any = await uploadToCloudinary(file.buffer);
+
+        // ✅ Create professional
         const professional = await Professional.create({
             fullname,
-            email,
+            email: email.toLowerCase().trim(),
             password: hashed,
             phone,
             role: "professional",
-            certificate: uploadfile.secure_url,
+            certificate: uploadResult.secure_url,
             professionType,
             experience,
             city,
             languages,
-            isActive: false // 🔥 IMPORTANT
+            isActive: false,
+            status: "pending"
         });
 
         return {
             message: "Registered successfully. Waiting for admin approval",
             professional
         };
-    }
 
+    } catch (error: any) {
+        console.error("❌ Professional Register Error:", {
+            message: error.message,
+            stack: error.stack
+        });
+
+        throw error instanceof ApiError
+            ? error
+            : new ApiError(500, error.message || "Registration failed");
+    }
+}
     // ==================== STEP 4: LOGIN ====================
     async login(loginDto: LoginDto) {
         const { email, password } = loginDto;

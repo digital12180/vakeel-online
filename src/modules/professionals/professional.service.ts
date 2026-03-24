@@ -159,11 +159,11 @@ export class ProfessionalService {
             city: dto.city,
             languages: dto.languages,
             createdBy: new mongoose.Types.ObjectId(adminId),
-            services: dto.services,
+            serviceId: dto.serviceId,
             consultationFee: dto.consultationFee,
             practiceArea: dto.practiceArea,
             isActive: true,
-            status: "approved" // since admin is creating
+            status: "pending" // since admin is creating
         });
 
         return professional;
