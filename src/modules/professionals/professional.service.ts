@@ -198,44 +198,44 @@ export class ProfessionalService {
                 if (query.maxFee) matchStage.consultationFee.$lte = Number(query.maxFee);
             }
 
-           const pipeline: any[] = [
-  { $match: matchStage },
+            const pipeline: any[] = [
+                { $match: matchStage },
 
-  {
-    $lookup: {
-      from: "services",
-      localField: "services",
-      foreignField: "_id",
-      as: "services"
-    }
-  },
+                {
+                    $lookup: {
+                        from: "services",
+                        localField: "services",
+                        foreignField: "_id",
+                        as: "services"
+                    }
+                },
 
-  ...(query.search
-    ? [{
-        $match: {
-          $or: [
-            { fullname: { $regex: query.search, $options: "i" } },
-            { professionType: { $regex: query.search, $options: "i" } },
-            { "services.title": { $regex: query.search, $options: "i" } }
-          ]
-        }
-      }]
-    : []),
+                ...(query.search
+                    ? [{
+                        $match: {
+                            $or: [
+                                { fullname: { $regex: query.search, $options: "i" } },
+                                { professionType: { $regex: query.search, $options: "i" } },
+                                { "services.title": { $regex: query.search, $options: "i" } }
+                            ]
+                        }
+                    }]
+                    : []),
 
-  // 🔐 REMOVE SENSITIVE DATA
-  {
-    $project: {
-      password: 0,
-      certificate: 0,
-      certificatePublicId: 0,
-      __v: 0
-    }
-  },
+                // 🔐 REMOVE SENSITIVE DATA
+                {
+                    $project: {
+                        password: 0,
+                        certificate: 0,
+                        certificatePublicId: 0,
+                        __v: 0
+                    }
+                },
 
-  { $sort: { createdAt: -1 } },
-  { $skip: skip },
-  { $limit: limit }
-];
+                { $sort: { createdAt: -1 } },
+                { $skip: skip },
+                { $limit: limit }
+            ];
 
             const professionals = await Professional.aggregate(pipeline);
 
@@ -264,14 +264,17 @@ export class ProfessionalService {
     // ✅ GET SINGLE
     async getProfessionalById(id: string) {
         try {
+            // ✅ Validate ID
             if (!mongoose.Types.ObjectId.isValid(id)) {
                 throw new ApiError(400, "Invalid ID");
             }
 
+            // ✅ Fetch professional
             const professional = await Professional.findById(id)
-                .populate("userId")
-                .populate("services");
+                .populate("services")
+                .select("-password -certificate -certificatePublicId -__v");
 
+            // ✅ Check existence
             if (!professional || !professional.isActive) {
                 throw new ApiError(404, "Professional not found");
             }
@@ -279,7 +282,10 @@ export class ProfessionalService {
             return professional;
 
         } catch (error: any) {
-            console.error("❌ Get Professional Error:", error.message);
+            console.error("❌ Get Professional Error:", {
+                message: error.message,
+                stack: error.stack
+            });
 
             if (error instanceof ApiError) throw error;
 
