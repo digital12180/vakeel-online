@@ -15,10 +15,12 @@ export class ConsultationController {
             if (!userId) {
                 return next(new ApiError(401, "Unauthorized user"));
             }
-
+            if (!req.params.id) {
+                return next(new ApiError(400, "Professional id required"));
+            }
             const consultation = await consultationService.createRequest(
                 userId,
-                req.body
+                req.params.id
             );
 
             return res.status(201).json({

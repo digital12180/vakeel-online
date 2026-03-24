@@ -20,7 +20,7 @@ export interface IProfessional extends Document {
   city: string;
   languages: string[];
   consultationFee: number;
-  services: mongoose.Types.ObjectId[];
+  serviceId: mongoose.Types.ObjectId;
   practiceArea: string[];
 
   // System Fields
@@ -88,12 +88,11 @@ const professionalSchema = new mongoose.Schema<IProfessional>(
       type: Number,
       min: 0
     },
-    services: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Service"
-      }
-    ],
+    serviceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Service"
+    }
+    ,
     practiceArea: [
       {
         type: String,

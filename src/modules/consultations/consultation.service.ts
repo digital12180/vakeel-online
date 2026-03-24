@@ -8,7 +8,7 @@ import { ApiError } from "../../utils/apiError.js";
 export class ConsultationService {
 
     // ✅ CREATE CONSULTATION REQUEST (STRICT)
-    async createRequest(userId: string, data: any) {
+    async createRequest(userId: string, id: string) {
         try {
             if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
                 throw new ApiError(401, "Invalid or unauthorized user");
@@ -19,51 +19,28 @@ export class ConsultationService {
                 throw new ApiError(404, "User not found");
             }
 
-            const { category, city, language, issue, serviceId } = data;
-
-            if (!category || !city || !language || !issue) {
-                throw new ApiError(400, "All required fields must be provided");
+            const professional = await Professional.findById(id);
+            if (!professional) {
+                throw new ApiError(404, "Professional not found");
             }
 
-            const allowedCategories = ["legal", "finance", "corporate"];
-            if (!allowedCategories.includes(category)) {
-                throw new ApiError(400, "Invalid category");
+            const service = await Service.findById(professional.serviceId);
+            if (!service) {
+                throw new ApiError(404, "Service not found");
             }
 
-            if (typeof city !== "string" || city.trim() === "") {
-                throw new ApiError(400, "Invalid city");
-            }
-
-            if (typeof language !== "string" || language.trim() === "") {
-                throw new ApiError(400, "Invalid language");
-            }
-
-            if (typeof issue !== "string" || issue.trim().length < 10) {
-                throw new ApiError(400, "Issue must be at least 10 characters");
-            }
-
-            let validServiceId = undefined;
-            if (serviceId) {
-                if (!mongoose.Types.ObjectId.isValid(serviceId)) {
-                    throw new ApiError(400, "Invalid service ID");
-                }
-
-                const service = await Service.findById(serviceId);
-                if (!service) {
-                    throw new ApiError(404, "Service not found");
-                }
-
-                validServiceId = service._id;
-            }
 
             const consultation = await ConsultationRequest.create({
                 userId,
-                category,
-                city: city.trim(),
-                language: language.trim(),
-                issue: issue.trim(),
-                serviceId: validServiceId,
-                consultationFee: 499,
+                fullname: user.fullname,
+                email: user.email,
+                phone: user.phone,
+                category: service.category,
+                city: professional.city.trim(),
+                language: professional.languages,
+                issue: service.description.trim(),
+                serviceId: service._id,
+                consultationFee: professional.consultationFee,
                 status: "pending",
                 paymentStatus: "pending"
             });
@@ -77,6 +54,83 @@ export class ConsultationService {
                 : new ApiError(500, "Failed to create consultation request");
         }
     }
+
+    //   async createRequest(userId: string, id: string) {
+    //     try {
+    //         if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+    //             throw new ApiError(401, "Invalid or unauthorized user");
+    //         }
+
+    //         const user = await User.findById(userId);
+    //         if (!user) {
+    //             throw new ApiError(404, "User not found");
+    //         }
+
+    //         const professional = await Professional.findById(id);
+    //         if (!professional) {
+    //             throw new ApiError(404, "Professional not found");
+    //         }
+    //         // const { category, city, language, issue, serviceId } = data;
+
+    //         // if (!category || !city || !language || !issue) {
+    //         //     throw new ApiError(400, "All required fields must be provided");
+    //         // }
+
+    //         // const allowedCategories = ["legal", "finance", "corporate"];
+    //         // if (!allowedCategories.includes(category)) {
+    //         //     throw new ApiError(400, "Invalid category");
+    //         // }
+
+    //         // if (typeof city !== "string" || city.trim() === "") {
+    //         //     throw new ApiError(400, "Invalid city");
+    //         // }
+
+    //         // if (typeof language !== "string" || language.trim() === "") {
+    //         //     throw new ApiError(400, "Invalid language");
+    //         // }
+
+    //         // if (typeof issue !== "string" || issue.trim().length < 10) {
+    //         //     throw new ApiError(400, "Issue must be at least 10 characters");
+    //         // }
+
+    //         let validServiceId = undefined;
+    //         // if (serviceId) {
+    //         //     if (!mongoose.Types.ObjectId.isValid(serviceId)) {
+    //         //         throw new ApiError(400, "Invalid service ID");
+    //         //     }
+
+    //         const service = await Service.findById(serviceId);
+    //         if (!service) {
+    //             throw new ApiError(404, "Service not found");
+    //         }
+
+    //         //     validServiceId = service._id;
+    //         // }
+
+    //         const consultation = await ConsultationRequest.create({
+    //             userId,
+    //             fullname: user.fullname,
+    //             email: user.email,
+    //             phone: user.phone,
+    //             // category: service.category,
+    //             city: professional.city.trim(),
+    //             language: professional.languages,
+    //             // issue: service.description.trim(),
+    //             serviceId: service._id,
+    //             consultationFee: professional.consultationFee,
+    //             status: "pending",
+    //             paymentStatus: "pending"
+    //         });
+
+    //         return consultation;
+
+    //     } catch (error: any) {
+    //         console.error("❌ Create Consultation Error:", error.message);
+    //         throw error instanceof ApiError
+    //             ? error
+    //             : new ApiError(500, "Failed to create consultation request");
+    //     }
+    // }
 
     // ✅ GET ALL (STRICT FILTERS)
     async getAllRequests(query: any, extraFilter: any = {}) {
