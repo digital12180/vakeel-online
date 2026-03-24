@@ -41,7 +41,7 @@ export class ConsultationService {
                 issue: service.description.trim(),
                 serviceId: service._id,
                 consultationFee: professional.consultationFee,
-                status: "pending",
+                status: "assigned",
                 paymentStatus: "pending"
             });
 
