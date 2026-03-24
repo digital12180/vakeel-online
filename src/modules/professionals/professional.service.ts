@@ -321,7 +321,7 @@ export class ProfessionalService {
                 "city",
                 "languages",
                 "consultationFee",
-                "services",
+                "serviceId",
                 "practiceArea"
             ];
 

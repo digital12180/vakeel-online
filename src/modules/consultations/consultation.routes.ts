@@ -6,7 +6,7 @@ const router = express.Router();
 const controller = new ConsultationController();
 
 // ✅ USER
-router.post("/", verifyToken, userOnly, controller.createRequest);
+router.post("/:id", verifyToken, userOnly, controller.createRequest);
 
 // ✅ GET
 router.get("/", verifyToken, adminAndprofessionalAnduser, controller.getAllRequests);
