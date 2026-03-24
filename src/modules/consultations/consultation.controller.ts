@@ -146,6 +146,12 @@ export class ConsultationController {
             }
 
             const { id } = req.params;
+            console.log({
+                id,
+                body:req.body,
+                userId,
+                role
+            });
 
             const updated = await consultationService.updateStatus(
                 id,
