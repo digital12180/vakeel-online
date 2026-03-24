@@ -271,8 +271,8 @@ export class ProfessionalService {
 
             // ✅ Fetch professional
             const professional = await Professional.findById(id)
-                .populate("services")
-                .select("-password -certificate -certificatePublicId -__v");
+                .populate("serviceId")
+                .select("-password -certificate -__v");
 
             // ✅ Check existence
             if (!professional || !professional.isActive) {
