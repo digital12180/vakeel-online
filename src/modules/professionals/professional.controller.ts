@@ -275,5 +275,26 @@ export class ProfessionalController {
             });
         }
     };
+    UpdateStatus = async (req: Request, res: Response) => {
+        try {
+
+            if (!req.params.id) {
+                return res.status(404).json({ message: "Professional id not provided" });
+            }
+            const professional = await this.professionalService.UpdateStatus(req.params.id);
+
+            if (!professional) {
+                return res.status(404).json({ message: "Not found" });
+            }
+
+            res.status(200).json({
+                success: true,
+                data: professional
+            });
+
+        } catch (error: any) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    };
 
 }
