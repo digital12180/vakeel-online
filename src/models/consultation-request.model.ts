@@ -9,7 +9,7 @@ export interface IConsultationRequest extends Document {
     serviceId?: mongoose.Types.ObjectId;
 
     city: string;
-    language: string;
+    languages: string[];
     issue: string;
 
     professionalId?: mongoose.Types.ObjectId;
@@ -36,7 +36,7 @@ const consultationSchema = new Schema<IConsultationRequest>({
     serviceId: { type: Schema.Types.ObjectId, ref: "Service" },
 
     city: { type: String, required: true },
-    language: { type: String, required: true },
+    languages: [{ type: String, required: true }],
 
     issue: { type: String, required: true, trim: true },
 
