@@ -41,6 +41,10 @@ export class ConsultationService {
                 issue: service.description.trim(),
                 serviceId: service._id,
                 consultationFee: professional.consultationFee,
+                professional: {
+                    id: professional._id,
+                    name: professional.fullname
+                },
                 status: "assigned",
                 paymentStatus: "pending"
             });
@@ -241,8 +245,8 @@ export class ConsultationService {
 
                 // 🔥 ONLY ASSIGNED PROFESSIONAL CAN UPDATE
                 if (
-                    !request.professionalId ||
-                    request.professionalId.toString() !== professional._id.toString()
+                    !request.professional.id ||
+                    request.professional.id.toString() !== professional._id.toString()
                 ) {
                     throw new ApiError(403, "You can only update your assigned consultations");
                 }
@@ -391,7 +395,7 @@ export class ConsultationService {
             }
 
             // ❌ Already assigned check
-            if (consultation.professionalId) {
+            if (consultation.professional.id) {
                 throw new ApiError(400, "Professional already assigned");
             }
 
@@ -408,10 +412,8 @@ export class ConsultationService {
                 finance: "Chartered Accountant",
                 corporate: "Company Secretary"
             };
-            console.log("-------------", consultation.category);
 
             const expectedType = map[consultation.category];
-            console.log("------------->>>", expectedType);
             if (
                 ![expectedType, "All"].includes(professional.professionType)
             ) {
@@ -422,7 +424,10 @@ export class ConsultationService {
             }
 
             // 🔥 ASSIGN
-            consultation.professionalId = professional._id;
+            consultation.professional = {
+                id: professional._id,
+                name: professional.fullname
+            };
             consultation.status = "assigned";
 
             await consultation.save();

@@ -12,7 +12,10 @@ export interface IConsultationRequest extends Document {
     languages: string[];
     issue: string;
 
-    professionalId?: mongoose.Types.ObjectId;
+    professional?: {
+        id: mongoose.Types.ObjectId;
+        name: string;
+    };
 
     consultationFee: number;
 
@@ -40,7 +43,15 @@ const consultationSchema = new Schema<IConsultationRequest>({
 
     issue: { type: String, required: true, trim: true },
 
-    professionalId: { type: Schema.Types.ObjectId, ref: "Professional" },
+    professional: {
+        id: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Professional"
+        },
+        name: {
+            type: String
+        }
+    },
 
     consultationFee: { type: Number, default: 499 },
 

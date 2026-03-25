@@ -9,8 +9,8 @@ const controller = new ConsultationController();
 router.post("/:id", verifyToken, userOnly, controller.createRequest);
 
 // ✅ GET
-router.get("/", verifyToken, adminAndprofessionalAnduser, controller.getAllRequests);
-router.get("/:id", verifyToken, adminAndprofessionalAnduser, controller.getRequestById);
+router.get("/", verifyToken, adminAndprofessional, controller.getAllRequests);
+router.get("/:id", verifyToken, adminAndprofessional, controller.getRequestById);
 
 // ✅ PROFESSIONAL / ADMIN
 router.put("/:id/status", verifyToken, adminAndprofessional, controller.updateStatus);
