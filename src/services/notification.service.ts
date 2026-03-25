@@ -66,6 +66,21 @@ class EmailService {
     );
   }
 
+ async sendRequestToProfessional(email: string, name: string) {
+  return this.sendEmail(
+    email,
+    "📩 Consultation Request Submitted",
+    `
+    <h2>Hello ${name},</h2>
+    <p>Your consultation request has been successfully submitted.</p>
+    <p>A professional will review your request and respond shortly.</p>
+    <br/>
+    <p>Thank you for using Vakeel.</p>
+    <p>Regards,<br/>Vakeel Team</p>
+    `
+  );
+}
+
   // =============================================
   // ✅ 2. REQUEST ACCEPTED
   // =============================================

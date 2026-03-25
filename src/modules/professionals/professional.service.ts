@@ -7,6 +7,7 @@ import type { ProRegisterDto } from "../auth/auth.dtos.js";
 import { uploadToCloudinary } from "../../utils/cloudinary.js";
 import { deleteFromCloudinary } from "../../utils/deleteImage.js";
 import bcrypt from "bcryptjs";
+import { emailService } from "../../services/notification.service.js";
 
 
 export class ProfessionalService {
@@ -130,10 +131,10 @@ export class ProfessionalService {
         file: Express.Multer.File
     ) {
         // ✅ Check in BOTH collections (important)
-        const existingUser = await User.findOne({ email: dto.email });
+        const admin = await User.findOne({ _id: adminId });
         const existingProfessional = await Professional.findOne({ email: dto.email });
 
-        if (existingUser || existingProfessional) {
+        if (existingProfessional) {
             throw new ApiError(409, "Professional already exists");
         }
 
@@ -165,7 +166,7 @@ export class ProfessionalService {
             isActive: true,
             status: "pending" // since admin is creating
         });
-
+        // await emailService.sendNewMessage(dto.email, dto.fullname, admin.fullname);
         return professional;
     }
 
