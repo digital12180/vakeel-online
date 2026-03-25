@@ -46,13 +46,16 @@ export class ConsultationController {
 
             let extraFilter: any = {};
 
-            if (role === "user") {
+            if (role === "admin") {
                 extraFilter.userId = userId;
             }
 
             else if (role === "professional") {
                 // 🔥 get professionalId from userId
-                const professional = await Professional.findOne({ userId });
+                const professional = await Professional.findOne({
+                    _id: userId
+                });
+                console.log(professional);
 
                 if (!professional) {
                     return res.status(200).json({
@@ -67,8 +70,8 @@ export class ConsultationController {
 
                 extraFilter.professionalId = professional._id;
             }
-    
-      
+
+
             const result = await consultationService.getAllRequests(
                 req.query,
                 extraFilter // ✅ pass separately
@@ -149,7 +152,7 @@ export class ConsultationController {
             const { id } = req.params;
             console.log({
                 id,
-                body:req.body,
+                body: req.body,
                 userId,
                 role
             });

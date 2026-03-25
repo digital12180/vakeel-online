@@ -167,7 +167,7 @@ export class ConsultationService {
 
             const requests = await ConsultationRequest.find(filter)
                 .populate("userId", "fullname email")
-                .populate("professionalId","fullname email")
+                .populate("professionalId","_id fullname email")
                 .populate("serviceId")
                 .sort({ createdAt: -1 })
                 .skip(skip)
@@ -198,7 +198,7 @@ export class ConsultationService {
                 isActive: true
             })
                 .populate("userId", "fullname email")
-                .populate("professionalId","fullname email")
+                .populate("professionalId","_id fullname email")
                 .populate("serviceId");
 
             if (!request) {
