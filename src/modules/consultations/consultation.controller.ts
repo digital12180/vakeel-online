@@ -18,8 +18,6 @@ export class ConsultationController {
             if (!req.params.id) {
                 return next(new ApiError(400, "Professional id required"));
             }
-            console.log(req.params.id);
-
             const consultation = await consultationService.createRequest(
                 userId,
                 req.params.id
@@ -69,7 +67,8 @@ export class ConsultationController {
 
                 extraFilter.professionalId = professional._id;
             }
-
+    
+      
             const result = await consultationService.getAllRequests(
                 req.query,
                 extraFilter // ✅ pass separately
@@ -114,7 +113,7 @@ export class ConsultationController {
 
                 if (
                     !professional ||
-                    request.professional.id?.toString() !== professional._id.toString()
+                    request.professionalId?.toString() !== professional._id.toString()
                 ) {
                     return next(new ApiError(403, "Access denied"));
                 }
@@ -150,7 +149,7 @@ export class ConsultationController {
             const { id } = req.params;
             console.log({
                 id,
-                body: req.body,
+                body:req.body,
                 userId,
                 role
             });

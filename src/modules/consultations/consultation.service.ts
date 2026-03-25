@@ -41,10 +41,7 @@ export class ConsultationService {
                 issue: service.description.trim(),
                 serviceId: service._id,
                 consultationFee: professional.consultationFee,
-                professional: {
-                    id: professional._id,
-                    name: professional.fullname
-                },
+                professionalId:professional._id,
                 status: "assigned",
                 paymentStatus: "pending"
             });
@@ -170,7 +167,7 @@ export class ConsultationService {
 
             const requests = await ConsultationRequest.find(filter)
                 .populate("userId", "fullname email")
-                .populate("professionalId")
+                .populate("professionalId","fullname email")
                 .populate("serviceId")
                 .sort({ createdAt: -1 })
                 .skip(skip)
@@ -201,7 +198,7 @@ export class ConsultationService {
                 isActive: true
             })
                 .populate("userId", "fullname email")
-                .populate("professionalId")
+                .populate("professionalId","fullname email")
                 .populate("serviceId");
 
             if (!request) {
@@ -245,8 +242,8 @@ export class ConsultationService {
 
                 // 🔥 ONLY ASSIGNED PROFESSIONAL CAN UPDATE
                 if (
-                    !request.professional.id ||
-                    request.professional.id.toString() !== professional._id.toString()
+                    !request.professionalId ||
+                    request.professionalId.toString() !== professional._id.toString()
                 ) {
                     throw new ApiError(403, "You can only update your assigned consultations");
                 }
@@ -395,7 +392,7 @@ export class ConsultationService {
             }
 
             // ❌ Already assigned check
-            if (consultation.professional.id) {
+            if (consultation.professionalId) {
                 throw new ApiError(400, "Professional already assigned");
             }
 
@@ -412,7 +409,7 @@ export class ConsultationService {
                 finance: "Chartered Accountant",
                 corporate: "Company Secretary"
             };
-
+        
             const expectedType = map[consultation.category];
             if (
                 ![expectedType, "All"].includes(professional.professionType)
@@ -424,10 +421,7 @@ export class ConsultationService {
             }
 
             // 🔥 ASSIGN
-            consultation.professional = {
-                id: professional._id,
-                name: professional.fullname
-            };
+            consultation.professionalId = professional._id;
             consultation.status = "assigned";
 
             await consultation.save();
