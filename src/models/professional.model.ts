@@ -1,3 +1,4 @@
+import { required } from "joi";
 import mongoose, { Document } from "mongoose";
 
 export interface IProfessional extends Document {
@@ -26,6 +27,7 @@ export interface IProfessional extends Document {
   // System Fields
   isActive: boolean;
   createdBy?: mongoose.Types.ObjectId;
+  // certificateStatus: string;
 
 }
 
@@ -64,7 +66,7 @@ const professionalSchema = new mongoose.Schema<IProfessional>(
     },
     status: {
       type: String,
-      enum: ["pending", "approved", "rejected","assigned"],
+      enum: ["pending", "approved", "rejected", "assigned"],
       default: "pending"
     },
 
@@ -109,7 +111,13 @@ const professionalSchema = new mongoose.Schema<IProfessional>(
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User"
-    }
+    },
+    // certificateStatus: {
+    //   type: String,
+    //   enum: ["pending", "verified", "rejected"],
+    //   default: "pending",
+    //   required: true
+    // }
   },
   { timestamps: true }
 );
