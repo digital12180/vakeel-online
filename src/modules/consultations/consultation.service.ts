@@ -42,11 +42,11 @@ export class ConsultationService {
                 issue: service.description.trim(),
                 serviceId: service._id,
                 consultationFee: professional.consultationFee,
-                professionalId:professional._id,
+                professionalId: professional._id,
                 status: "assigned",
                 paymentStatus: "pending"
             });
-            //   await emailService.sendRequestCreated(user.email,user.fullname);
+            await emailService.sendRequestToProfessional(user.email, user.fullname);
             return consultation;
 
         } catch (error: any) {
@@ -168,7 +168,7 @@ export class ConsultationService {
 
             const requests = await ConsultationRequest.find(filter)
                 .populate("userId", "fullname email")
-                .populate("professionalId","_id fullname email")
+                .populate("professionalId", "_id fullname email")
                 .populate("serviceId")
                 .sort({ createdAt: -1 })
                 .skip(skip)
@@ -199,7 +199,7 @@ export class ConsultationService {
                 isActive: true
             })
                 .populate("userId", "fullname email")
-                .populate("professionalId","_id fullname email")
+                .populate("professionalId", "_id fullname email")
                 .populate("serviceId");
 
             if (!request) {
@@ -232,10 +232,11 @@ export class ConsultationService {
             if (!request) {
                 throw new ApiError(404, "Consultation not found");
             }
-
+            const user = await User.findById(request.userId);
+            let professional;
             // 🔥 PROFESSIONAL ACCESS CHECK
             if (role === "professional") {
-                const professional = await Professional.findOne({ userId });
+                professional = await Professional.findOne({ _id: userId });
 
                 if (!professional) {
                     throw new ApiError(403, "Professional profile not found");
@@ -271,7 +272,7 @@ export class ConsultationService {
             }
 
             // 🔥 ACCEPT VALIDATION
-            if (status === "accepted" && !meetingLink && !contactNumber) {
+            if (status === "accepted") {
                 throw new ApiError(
                     400,
                     "Meeting link or contact number required when accepting"
@@ -279,9 +280,13 @@ export class ConsultationService {
             }
 
             request.status = status;
-
-            if (meetingLink) request.meetingLink = meetingLink.trim();
-            if (contactNumber) request.contactNumber = contactNumber.trim();
+            if (status === "accepted") {
+                await emailService.sendRequestAccepted(user.email, user.fullname, professional.fullname);
+            } else if (status === "rejected") {
+                await emailService.sendRequestRejected(user.email, user.fullname);
+            }
+            if (meetingLink) request.meetingLink = meetingLink.trim() ?? "";
+            if (contactNumber) request.contactNumber = contactNumber.trim() ?? "";
 
             await request.save();
 
@@ -356,7 +361,6 @@ export class ConsultationService {
 
             consultation.professionalId = professional._id;
             consultation.status = "assigned";
-
             await consultation.save();
 
             return consultation;
@@ -396,7 +400,10 @@ export class ConsultationService {
             if (consultation.professionalId) {
                 throw new ApiError(400, "Professional already assigned");
             }
-
+            const user = await User.findById(consultation.userId);
+            if (!user) {
+                throw new ApiError(404, "User not found");
+            }
             // 🔥 FETCH PROFESSIONAL
             const professional = await Professional.findById(professionalId);
 
@@ -410,7 +417,7 @@ export class ConsultationService {
                 finance: "Chartered Accountant",
                 corporate: "Company Secretary"
             };
-        
+
             const expectedType = map[consultation.category];
             if (
                 ![expectedType, "All"].includes(professional.professionType)
@@ -424,6 +431,7 @@ export class ConsultationService {
             // 🔥 ASSIGN
             consultation.professionalId = professional._id;
             consultation.status = "assigned";
+            await emailService.notifyProfessional(professional.email, professional.fullname, user.fullname)
 
             await consultation.save();
 

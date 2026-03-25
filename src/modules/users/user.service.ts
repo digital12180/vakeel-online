@@ -4,6 +4,7 @@ import { ApiError } from "../../utils/apiError.js";
 import { User } from "../../models/user.model.js";
 import { Service } from "../../models/service.model.js";
 import type { RequestDTO } from "../auth/auth.dtos.js";
+import { emailService } from "../../services/notification.service.js";
 
 export class UserService {
 
@@ -90,6 +91,8 @@ export class UserService {
                 status: "pending",
                 paymentStatus: "pending"
             });
+
+            await emailService.sendRequestCreated(user.email, user.fullname);
 
             return consultation;
 
