@@ -32,6 +32,7 @@
     "nodemailer": "^6.10.1",
     "redis": "^4.6.7",
     "stripe": "^20.4.1",
+    "tesseract.js": "^7.0.0",
     "twilio": "^4.23.0"
   },
   "devDependencies": {

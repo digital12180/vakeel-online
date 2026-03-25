@@ -17,6 +17,7 @@ import { ApiError } from '../../utils/apiError.js';
 import { User } from '../../models/user.model.js';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../../responses/message.js';
 import { uploadToCloudinary } from '../../utils/cloudinary.js';
+// import { verifyCertificate } from '../../services/file-upload.service.js';
 
 export class AuthService {
     // ==================== STEP 3: REGISTER ====================
@@ -139,75 +140,78 @@ export class AuthService {
         }
     }
 
-   async ProfessionalRegister(dto: ProRegisterDto, file?: Express.Multer.File) {
-    try {
-        const {
-            fullname,
-            email,
-            password,
-            phone,
-            professionType,
-            experience,
-            city,
-            languages
-        } = dto;
+    async ProfessionalRegister(dto: ProRegisterDto, file?: Express.Multer.File) {
+        try {
+            const {
+                fullname,
+                email,
+                password,
+                phone,
+                professionType,
+                experience,
+                city,
+                languages
+            } = dto;
 
-        // ✅ Required fields
-        if (!fullname || !email || !password || !phone) {
-            throw new ApiError(400, "All required fields missing");
+            // ✅ Required fields
+            if (!fullname || !email || !password || !phone) {
+                throw new ApiError(400, "All required fields missing");
+            }
+
+            // ✅ File validation
+            if (!file) {
+                throw new ApiError(400, "Certificate is required");
+            }
+
+            // ✅ Check duplicate (both collections 🔥)
+            const existingUser = await User.findOne({ email });
+            const existingProfessional = await Professional.findOne({ email });
+
+            if (existingUser || existingProfessional) {
+                throw new ApiError(409, "Email already exists");
+            }
+
+            // ✅ Hash password
+            const hashed = await bcrypt.hash(password, 10);
+            // ✅ Upload to Cloudinary
+            const uploadResult: any = await uploadToCloudinary(file.buffer);
+
+            // const result = await verifyCertificate(uploadResult.secure_url, dto.professionType);
+
+
+            // ✅ Create professional
+            const professional = await Professional.create({
+                fullname,
+                email: email.toLowerCase().trim(),
+                password: hashed,
+                phone,
+                role: "professional",
+                certificate: uploadResult.secure_url,
+                // certificateStatus: result.isValid ? "verified" : "not verified",
+                professionType,
+                experience,
+                city,
+                languages,
+                isActive: true,
+                status: "pending"
+            });
+
+            return {
+                message: "Registered successfully. Waiting for admin approval",
+                professional
+            };
+
+        } catch (error: any) {
+            console.error("❌ Professional Register Error:", {
+                message: error.message,
+                stack: error.stack
+            });
+
+            throw error instanceof ApiError
+                ? error
+                : new ApiError(500, error.message || "Registration failed");
         }
-
-        // ✅ File validation
-        if (!file) {
-            throw new ApiError(400, "Certificate is required");
-        }
-
-        // ✅ Check duplicate (both collections 🔥)
-        const existingUser = await User.findOne({ email });
-        const existingProfessional = await Professional.findOne({ email });
-
-        if (existingUser || existingProfessional) {
-            throw new ApiError(409, "Email already exists");
-        }
-
-        // ✅ Hash password
-        const hashed = await bcrypt.hash(password, 10);
-
-        // ✅ Upload to Cloudinary
-        const uploadResult: any = await uploadToCloudinary(file.buffer);
-
-        // ✅ Create professional
-        const professional = await Professional.create({
-            fullname,
-            email: email.toLowerCase().trim(),
-            password: hashed,
-            phone,
-            role: "professional",
-            certificate: uploadResult.secure_url,
-            professionType,
-            experience,
-            city,
-            languages,
-            isActive: true,
-            status: "pending"
-        });
-
-        return {
-            message: "Registered successfully. Waiting for admin approval",
-            professional
-        };
-
-    } catch (error: any) {
-        console.error("❌ Professional Register Error:", {
-            message: error.message,
-            stack: error.stack
-        });
-
-        throw error instanceof ApiError
-            ? error
-            : new ApiError(500, error.message || "Registration failed");
     }
-}
     // ==================== STEP 4: LOGIN ====================
     async login(loginDto: LoginDto) {
         const { email, password } = loginDto;
