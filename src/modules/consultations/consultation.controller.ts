@@ -18,6 +18,8 @@ export class ConsultationController {
             if (!req.params.id) {
                 return next(new ApiError(400, "Professional id required"));
             }
+            console.log(req.params.id);
+
             const consultation = await consultationService.createRequest(
                 userId,
                 req.params.id
@@ -148,7 +150,7 @@ export class ConsultationController {
             const { id } = req.params;
             console.log({
                 id,
-                body:req.body,
+                body: req.body,
                 userId,
                 role
             });

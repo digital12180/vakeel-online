@@ -37,7 +37,7 @@ export class ConsultationService {
                 phone: user.phone,
                 category: service.category,
                 city: professional.city.trim(),
-                language: professional.languages,
+                languages: professional.languages,
                 issue: service.description.trim(),
                 serviceId: service._id,
                 consultationFee: professional.consultationFee,
