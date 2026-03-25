@@ -204,7 +204,7 @@ export class ProfessionalService {
                 {
                     $lookup: {
                         from: "services",
-                        localField: "services",
+                        localField: "serviceId",
                         foreignField: "_id",
                         as: "services"
                     }
@@ -366,8 +366,6 @@ export class ProfessionalService {
             throw new ApiError(500, "Failed to update professional");
         }
     }
-
-
 
     // ✅ DELETE (SOFT DELETE)
     async softdeleteProfessional(id: string) {
