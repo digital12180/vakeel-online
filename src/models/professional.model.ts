@@ -25,7 +25,8 @@ export interface IProfessional extends Document {
 
   // System Fields
   isActive: boolean;
-  createdBy?: mongoose.Types.ObjectId; // admin
+  createdBy?: mongoose.Types.ObjectId;
+
 }
 
 const professionalSchema = new mongoose.Schema<IProfessional>(

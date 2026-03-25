@@ -114,7 +114,7 @@ export class ConsultationController {
 
                 if (
                     !professional ||
-                    request.professionalId?.toString() !== professional._id.toString()
+                    request.professional.id?.toString() !== professional._id.toString()
                 ) {
                     return next(new ApiError(403, "Access denied"));
                 }
