@@ -46,7 +46,7 @@ export class ConsultationController {
 
             let extraFilter: any = {};
 
-            if (role === "admin") {
+            if (role === "user") {
                 extraFilter.userId = userId;
             }
 
@@ -55,7 +55,6 @@ export class ConsultationController {
                 const professional = await Professional.findOne({
                     _id: userId
                 });
-                console.log(professional);
 
                 if (!professional) {
                     return res.status(200).json({
