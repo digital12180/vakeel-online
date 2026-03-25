@@ -2,7 +2,6 @@ import type { Request, Response, NextFunction } from "express";
 import { ConsultationService } from "./consultation.service.js";
 import { ApiError } from "../../utils/apiError.js";
 import { Professional } from "../../models/professional.model.js";
-
 const consultationService = new ConsultationService();
 
 export class ConsultationController {

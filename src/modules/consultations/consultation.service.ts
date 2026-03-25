@@ -4,6 +4,7 @@ import { Professional } from "../../models/professional.model.js";
 import { Service } from "../../models/service.model.js";
 import { User } from "../../models/user.model.js";
 import { ApiError } from "../../utils/apiError.js";
+import { emailService } from "../../services/notification.service.js";
 
 export class ConsultationService {
 
@@ -45,7 +46,7 @@ export class ConsultationService {
                 status: "assigned",
                 paymentStatus: "pending"
             });
-
+            //   await emailService.sendRequestCreated(user.email,user.fullname);
             return consultation;
 
         } catch (error: any) {

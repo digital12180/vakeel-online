@@ -188,7 +188,7 @@ export class AuthService {
             experience,
             city,
             languages,
-            isActive: false,
+            isActive: true,
             status: "pending"
         });
 

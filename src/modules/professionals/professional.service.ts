@@ -499,4 +499,33 @@ export class ProfessionalService {
 
         return professional;
     }
+
+    async UpdateStatus(id: string) {
+        try {
+            // ✅ Validate ID
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                throw new ApiError(400, "Invalid ID");
+            }
+
+            // ✅ Fetch professional
+            const professional = await Professional.findById(id).select("-password -certificate -__v");
+            if (professional.isActive === true) {
+                professional.isActive = false;
+            } else if (professional.isActive === false) {
+                professional.isActive = true;
+            }
+            await professional.save();
+            return professional;
+
+        } catch (error: any) {
+            console.error("❌ Professional Active Status Error:", {
+                message: error.message,
+                stack: error.stack
+            });
+
+            if (error instanceof ApiError) throw error;
+
+            throw new ApiError(500, "Failed to change active status professional");
+        }
+    }
 }
