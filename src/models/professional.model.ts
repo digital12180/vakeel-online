@@ -1,4 +1,4 @@
-import { required } from "joi";
+
 import mongoose, { Document } from "mongoose";
 
 export interface IProfessional extends Document {
