@@ -8,52 +8,75 @@ import { emailService } from "../../services/notification.service.js";
 
 export class ConsultationService {
 
-    // ✅ CREATE CONSULTATION REQUEST (STRICT)
-    async createRequest(userId: string, id: string) {
+    async createRequest(userId: string, professionalId: string) {
         try {
+            // 🔍 DEBUG LOGS (remove in production)
+            console.log("👉 userId:", userId);
+            console.log("👉 professionalId:", professionalId);
+
+            // ✅ Validate IDs
             if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
                 throw new ApiError(401, "Invalid or unauthorized user");
             }
 
+            if (!professionalId || !mongoose.Types.ObjectId.isValid(professionalId)) {
+                throw new ApiError(400, "Invalid professional id");
+            }
+
+            // ✅ Fetch user
             const user = await User.findById(userId);
             if (!user) {
                 throw new ApiError(404, "User not found");
             }
 
-            const professional = await Professional.findById(id);
+            // ✅ Fetch professional
+            const professional = await Professional.findById(professionalId);
             if (!professional) {
                 throw new ApiError(404, "Professional not found");
             }
 
+            // ✅ Fetch service
             const service = await Service.findById(professional.serviceId);
             if (!service) {
                 throw new ApiError(404, "Service not found");
             }
 
-
+            // ✅ Create consultation request
             const consultation = await ConsultationRequest.create({
                 userId,
-                fullname: user.fullname,
-                email: user.email,
-                phone: user.phone,
-                category: service.category,
-                city: professional.city.trim(),
-                languages: professional.languages,
-                issue: service.description.trim(),
+                fullname: user.fullname || "",
+                email: user.email || "",
+                phone: user.phone || "",
+                category: service.category || "",
+                city: professional.city?.trim() || "",
+                languages: professional.languages || [],
+                issue: service.description?.trim() || "",
                 serviceId: service._id,
-                consultationFee: professional.consultationFee,
+                consultationFee: professional.consultationFee || 0,
                 professionalId: professional._id,
                 status: "assigned",
                 paymentStatus: "pending"
             });
-            await emailService.sendRequestToProfessional(user.email, user.fullname);
+
+            // ✅ Send email (NON-BLOCKING)
+            try {
+                await emailService.sendRequestToProfessional(
+                    user.email,
+                    user.fullname
+                );
+            } catch (emailError: any) {
+                console.error("⚠️ Email failed:", emailError.message);
+            }
+
             return consultation;
 
         } catch (error: any) {
-            console.error("❌ Create Consultation Error:", error.message);
+            console.error("❌ Create Consultation Error FULL:", error);
+
+            // ✅ Return original error (DO NOT HIDE)
             throw error instanceof ApiError
                 ? error
-                : new ApiError(500, "Failed to create consultation request");
+                : new ApiError(500, error.message || "Internal Server Error");
         }
     }
 

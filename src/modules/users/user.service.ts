@@ -10,65 +10,73 @@ export class UserService {
 
     async TalkToPrefessional(userId: string, data: RequestDTO) {
         try {
-            // ✅ 1. Validate userId
+            console.log("👉 userId:", userId);
+            console.log("👉 Incoming Data:", data);
+
+            // ✅ Validate userId
             if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
                 throw new ApiError(401, "Invalid or unauthorized user");
             }
 
-            // ✅ 2. Fetch user (only required fields)
+            // ✅ Fetch user
             const user = await User.findById(userId).select("fullname email phone");
             if (!user) {
                 throw new ApiError(404, "User not found");
             }
 
-            // ✅ 3. Destructure + sanitize
-            const {
-                category,
-                city,
-                language,
-                issue,
-                serviceId
-            } = data;
+            // ✅ Destructure
+            const { category, city, language, issue, serviceId } = data;
 
             const fullname = data.fullname || user.fullname;
             const email = (data.email || user.email)?.toLowerCase().trim();
             const phone = data.phone || user.phone;
 
-            // ✅ 4. Required fields validation
+            // ✅ Validation
             if (!category || !city || !language || !issue) {
                 throw new ApiError(400, "All required fields must be provided");
             }
 
-            // ✅ 5. Enum validation (strong)
             const allowedCategories = ["legal", "finance", "corporate"];
             if (!allowedCategories.includes(category)) {
                 throw new ApiError(400, "Invalid category");
             }
 
-            // ✅ 6. Input validation
-            if (typeof city !== "string" || !city.trim()) {
+            if (!city?.trim()) {
                 throw new ApiError(400, "Invalid city");
             }
 
-            if (typeof language !== "string" || !language.trim()) {
+            if (!language?.trim()) {
                 throw new ApiError(400, "Invalid language");
             }
 
-            if (typeof issue !== "string" || issue.trim().length < 10) {
+            if (!issue || issue.trim().length < 10) {
                 throw new ApiError(400, "Issue must be at least 10 characters");
             }
 
-            // ✅ 7. Service validation
-            let validServiceId: mongoose.Types.ObjectId | undefined;
+            // ✅ Service validation
+            let validServiceId;
 
-            if (serviceId) {
+            if (serviceId && typeof serviceId === "string") {
+
+                console.log("👉 serviceId:", serviceId);
+
+                const cleanId = serviceId;
+
+                // 🚨 block fake values
                 if (
-                    typeof serviceId !== "string" ||
-                    !mongoose.Types.ObjectId.isValid(serviceId)
+                    cleanId === "" ||
+                    cleanId === "undefined" ||
+                    cleanId === "null"
                 ) {
-                    throw new ApiError(400, "Invalid service ID");
+                    throw new ApiError(400, "Invalid service ID value");
                 }
-                const service = await Service.findById(serviceId).select("_id");
+
+                // ✅ strict ObjectId check
+                if (!mongoose.Types.ObjectId.isValid(cleanId)) {
+                    throw new ApiError(400, "Invalid service ID format");
+                }
+
+                const service = await Service.findById(cleanId);
                 if (!service) {
                     throw new ApiError(404, "Service not found");
                 }
@@ -76,7 +84,7 @@ export class UserService {
                 validServiceId = service._id;
             }
 
-            // ✅ 8. Create consultation
+            // ✅ Create consultation
             const consultation = await ConsultationRequest.create({
                 userId,
                 fullname,
@@ -87,24 +95,26 @@ export class UserService {
                 language: language.trim(),
                 issue: issue.trim(),
                 serviceId: validServiceId,
-                consultationFee: 499, // 🔥 move to config later
+                consultationFee: 499,
                 status: "pending",
                 paymentStatus: "pending"
             });
 
-            await emailService.sendRequestCreated(user.email, user.fullname);
+            // ✅ Email safe
+            try {
+                await emailService.sendRequestCreated(user.email, user.fullname);
+            } catch (err: any) {
+                console.error("⚠️ Email failed:", err.message);
+            }
 
             return consultation;
 
         } catch (error: any) {
-            console.error("❌ Create Consultation Error:", {
-                message: error.message,
-                stack: error.stack
-            });
+            console.error("❌ FULL ERROR:", error);
 
             throw error instanceof ApiError
                 ? error
-                : new ApiError(500, "Failed to create consultation request");
+                : new ApiError(500, error.message || "Internal Server Error");
         }
     }
 }
