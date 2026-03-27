@@ -22,9 +22,10 @@ const notificationSchema = new Schema<INotification>({
         enum: ["consultation", "payment", "system"],
         default: "system"
     },
-
     isRead: { type: Boolean, default: false }
-
 }, { timestamps: true });
 
 export const Notification = mongoose.model("Notification", notificationSchema);
+
+
+

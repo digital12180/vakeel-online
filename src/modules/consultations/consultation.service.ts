@@ -4,7 +4,9 @@ import { Professional } from "../../models/professional.model.js";
 import { Service } from "../../models/service.model.js";
 import { User } from "../../models/user.model.js";
 import { ApiError } from "../../utils/apiError.js";
-import { emailService } from "../../services/notification.service.js";
+import { emailService } from "../../services/email.service.js";
+import { notificationService } from "../../services/notification.service.js";
+import { Notification } from "../../models/notification.model.js";
 
 export class ConsultationService {
 
@@ -57,6 +59,21 @@ export class ConsultationService {
                 status: "assigned",
                 paymentStatus: "pending"
             });
+            await Notification.create({
+                userId: userId,
+                title: "Consultation Request",
+                message: "Request submitted to the professional successfully!",
+                type: "consultation",
+                isRead: false
+            })
+            try {
+                await notificationService.sendRequestCreated(
+                    userId,
+                    user.fullname
+                );
+            } catch (error: any) {
+                console.error("⚠️ Notification failed:", error.message);
+            }
 
             // ✅ Send email (NON-BLOCKING)
             try {
@@ -304,8 +321,39 @@ export class ConsultationService {
 
             request.status = status;
             if (status === "accepted") {
+                await Notification.create({
+                    userId: userId,
+                    title: "Request Accepted",
+                    message: "Your consultation request has been accepted",
+                    type: "consultation",
+                    isRead: false,
+                })
+                try {
+                    await notificationService.sendRequestAccepted(
+                        userId,
+                        user.fullname,
+                        professional.fullname
+                    );
+                } catch (error: any) {
+                    console.error("⚠️ Notification failed:", error.message);
+                }
                 await emailService.sendRequestAccepted(user.email, user.fullname, professional.fullname);
             } else if (status === "rejected") {
+                await Notification.create({
+                    userId: userId,
+                    title: "Request Rejected",
+                    message: "Your consultation request has been rejected",
+                    type: "consultation",
+                    isRead: false,
+                })
+                try {
+                    await notificationService.sendRequestRejected(
+                        userId,
+                        user.fullname
+                    );
+                } catch (error: any) {
+                    console.error("⚠️ Notification failed:", error.message);
+                }
                 await emailService.sendRequestRejected(user.email, user.fullname);
             }
             if (meetingLink) request.meetingLink = meetingLink.trim() ?? "";
@@ -454,9 +502,39 @@ export class ConsultationService {
             // 🔥 ASSIGN
             consultation.professionalId = professional._id;
             consultation.status = "assigned";
-            await emailService.notifyProfessional(professional.email, professional.fullname, user.fullname)
 
-            await consultation.save();
+            try {
+                await emailService.notifyProfessional(professional.email, professional.fullname, user.fullname)
+
+            } catch (error: any) {
+                console.error("⚠️ Email failed:", error.message);
+            }
+            await Notification.create({
+                userId: user._id,
+                title: "👨‍⚖️ Professional Assigned",
+                message: `Your consultation request has been assigned to ${professional.fullname}.`,
+                type: "consultation",
+                isRead: false,
+            });
+
+            try {
+                await notificationService.sendRequestAssigned(
+                    user._id,
+                    user.fullname,
+                    professional.fullname
+                );
+            } catch (error: any) {
+                console.error("⚠️ Notification failed:", error.message);
+            }
+            try {
+                await notificationService.notifyProfessional(
+                    professional._id,
+                    professional.fullname,
+                    user.fullname,
+                );
+            } catch (error: any) {
+                console.error("⚠️ Notification failed:", error.message);
+            }
 
             return consultation;
 

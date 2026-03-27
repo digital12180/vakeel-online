@@ -7,7 +7,7 @@ import type { ProRegisterDto } from "../auth/auth.dtos.js";
 import { uploadToCloudinary } from "../../utils/cloudinary.js";
 import { deleteFromCloudinary } from "../../utils/deleteImage.js";
 import bcrypt from "bcryptjs";
-import { emailService } from "../../services/notification.service.js";
+import { emailService } from "../../services/email.service.js";
 import { verifyCertificate } from "../../services/file-upload.service.js";
 
 export class ProfessionalService {
