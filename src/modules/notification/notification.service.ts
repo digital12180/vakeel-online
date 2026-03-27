@@ -27,12 +27,12 @@ export class NotificationService {
     };
   }
 
-  async getSingleNotification(notificationId: string) {
+  async getSingleNotification(notificationId: string, userId: string) {
     if (!Types.ObjectId.isValid(notificationId)) {
       throw new ApiError(400, "Invalid Notification ID");
     }
 
-    const notification = await Notification.findById(notificationId);
+    const notification = await Notification.findOne({notificationId,userId});
 
     if (!notification) {
       throw new ApiError(404, "Notification not found");

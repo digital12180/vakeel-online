@@ -7,34 +7,34 @@ const consultationService = new ConsultationService();
 export class ConsultationController {
 
     // ✅ CREATE CONSULTATION (USER)
-   createRequest = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const userId = req.user?._id || req.tokenData?.userId;
-        const professionalId = req.params.id;
+    createRequest = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const userId = req.user?._id || req.tokenData?.userId;
+            const professionalId = req.params.id;
 
-        if (!userId) {
-            return next(new ApiError(401, "Unauthorized user"));
+            if (!userId) {
+                return next(new ApiError(401, "Unauthorized user"));
+            }
+
+            if (!professionalId) {
+                return next(new ApiError(400, "Professional id required"));
+            }
+
+            const consultation = await consultationService.createRequest(
+                userId,
+                professionalId
+            );
+
+            return res.status(201).json({
+                success: true,
+                message: "Consultation request created successfully",
+                data: consultation
+            });
+
+        } catch (error) {
+            next(error);
         }
-
-        if (!professionalId) {
-            return next(new ApiError(400, "Professional id required"));
-        }
-
-        const consultation = await consultationService.createRequest(
-            userId,
-            professionalId
-        );
-
-        return res.status(201).json({
-            success: true,
-            message: "Consultation request created successfully",
-            data: consultation
-        });
-
-    } catch (error) {
-        next(error);
-    }
-};
+    };
 
     // ✅ GET ALL (ADMIN / USER)
     getAllRequests = async (req: Request, res: Response, next: NextFunction) => {
@@ -218,6 +218,30 @@ export class ConsultationController {
                 success: true,
                 message: "Professional assigned successfully",
                 data: result
+            });
+
+        } catch (error) {
+            next(error);
+        }
+    };
+
+    getAllRequestsByUser = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const userId = req.user?._id || req.tokenData?.userId;
+
+            if (!userId) {
+                return next(new ApiError(401, "Unauthorized"));
+            }
+
+            const result = await consultationService.getAllRequestsByUser(
+                req.query,
+                userId
+            );
+
+            return res.status(200).json({
+                success: true,
+                message: "Consultation requests fetched",
+                ...result
             });
 
         } catch (error) {

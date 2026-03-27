@@ -19,4 +19,8 @@ router.put("/:id/status", verifyToken, adminAndprofessional, controller.updateSt
 router.delete("/:id", verifyToken, userAndadmin, controller.deleteRequest);
 
 router.post("/:id/assign", verifyToken, adminOnly, controller.assignProfessionalByAdmin);
+
+router.get("/get-all-req-y-user", verifyToken, userOnly, controller.getAllRequestsByUser);
+
+
 export default router;
