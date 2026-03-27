@@ -6,7 +6,7 @@ const router = express.Router();
 const controller = new ServiceController();
 
 router.route('/')
-  .post(verifyToken, professionalOnly, controller.createService.bind(controller))
+  .post(verifyToken, adminOnly, controller.createService.bind(controller))
   .get(controller.getAllServices.bind(controller));
 
 router.get("/:id", controller.getServiceById.bind(controller));
