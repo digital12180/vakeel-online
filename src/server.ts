@@ -1,15 +1,18 @@
 console.log('🚀 server.ts STARTING...');
 import { errorHandler } from './middlewares/error.middleware.js';
-
+import { initializeSocket } from './services/socket.service.js';
+import http from "http"
 // ==================== LOAD ENV FIRST ====================
 import dotenv from 'dotenv';
 dotenv.config({ override: true });
-import { connectDB } from "./config/database.js"
+import { connectDB } from "./config/database.js";
 
 // ==================== IMPORT WITH ALIASES ====================
 import app from './app.js'; // ✅ Import from root
-
 app.use(errorHandler);
+
+const server=http.createServer(app);
+initializeSocket(server);
 // ==================== CONFIGURATION ====================
 const PORT = process.env.PORT || 9093;
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -34,7 +37,7 @@ const startServer = async (): Promise<void> => {
 
         await connectDatabase();
         // Start Express server
-        app.listen(PORT, () => {
+        server.listen(PORT, () => {
             console.log("server started at port :", PORT);
         })
     } catch (error: any) {
