@@ -68,5 +68,104 @@
 // }, { timestamps: true });
 
 // export const Payment = mongoose.model("Payment", paymentSchema);
+import mongoose, { Schema, Document, Types } from "mongoose";
 
+/**
+ * Enum for Payment Status
+ */
+export enum PaymentStatus {
+  INITIALIZE = "INITIALIZE",
+  PAID = "PAID",
+  FAILED = "FAILED",
+  REFUNDED = "REFUNDED",
+}
 
+/**
+ * Interface for Payment Document
+ */
+export interface IPayment extends Document {
+  userId: Types.ObjectId;
+  orderId: string; // Razorpay order id
+  paymentId?: string;
+  signature?: string;
+  amount: number;
+  purpose: string; // 🔥 NEW (why payment is done)
+  status: PaymentStatus;
+  failureReason?: string;
+
+  // 🔥 retry + protection
+  retryCount: number;
+  isLocked: boolean;
+
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Payment Schema
+ */
+const paymentSchema: Schema<IPayment> = new Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+
+    orderId: {
+      type: String,
+      required: true,
+      unique: true, // 🔥 prevent duplicate orders
+    },
+
+    paymentId: {
+      type: String,
+    },
+
+    signature: {
+      type: String,
+    },
+
+    amount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+
+    purpose: {
+      type: String,
+      required: true, // e.g. CONSULTATION_FEE
+    },
+
+    status: {
+      type: String,
+      enum: Object.values(PaymentStatus),
+      default: PaymentStatus.INITIALIZE,
+    },
+
+    failureReason: {
+      type: String,
+    },
+
+    retryCount: {
+      type: Number,
+      default: 0,
+    },
+
+    isLocked: {
+      type: Boolean,
+      default: false, // once paid → lock
+    },
+  },
+  { timestamps: true }
+);
+
+/**
+ * Index for fast queries (production 🔥)
+ */
+paymentSchema.index({ userId: 1, createdAt: -1 });
+
+/**
+ * Export Model
+ */
+export const Payment = mongoose.model<IPayment>("Payment", paymentSchema);

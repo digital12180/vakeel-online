@@ -135,4 +135,101 @@
 // };
 
 
+// controllers/payment.controller.ts
+
+import type { Request, Response, NextFunction } from "express";
+import { PaymentService } from "./payment.service.js";
+
+export class PaymentController {
+
+  static async create(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { amount, purpose } = req.body;
+      const userId = req.user._id;
+
+      const result = await PaymentService.createPayment(userId, amount, purpose);
+
+      res.json({ success: true, data: result });
+
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async verify(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await PaymentService.verifyPayment(req.body);
+
+      res.json({ success: true, data: result });
+
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async failed(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { paymentId, reason } = req.body;
+
+      const result = await PaymentService.paymentFailed(paymentId, reason);
+
+      res.json({ success: true, data: result });
+
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async retry(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { paymentId } = req.body;
+
+      const result = await PaymentService.retryPayment(paymentId);
+
+      res.json({ success: true, data: result });
+
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async history(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user._id;
+      const { page, limit } = req.query;
+
+      const result = await PaymentService.getHistory(
+        userId,
+        Number(page),
+        Number(limit)
+      );
+
+      res.json({ success: true, ...result });
+
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getHisotryByAdmin(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user._id;
+      if (!userId || req.user.role !== "admin") {
+        res.json({ message: "unathorized or invalid user" })
+      }
+      const { page, limit } = req.query;
+
+      const result = await PaymentService.getHisotryByAdmin(
+        Number(page),
+        Number(limit)
+      );
+
+      res.json({ success: true, ...result });
+
+    } catch (error) {
+      next(error);
+    }
+  }
+}
+
 

@@ -13,7 +13,7 @@ export interface IProfessional extends Document {
 
   // Role & Status
   role: "professional";
-  status: "pending" | "approved" | "rejected" | "assigned";
+  status: "pending" | "accepted" | "rejected" | "assigned";
 
   // Admin Controlled Fields
   professionType: "Lawyer / Advocate" | "Chartered Accountant" | "Company Secretary";
@@ -66,7 +66,7 @@ const professionalSchema = new mongoose.Schema<IProfessional>(
     },
     status: {
       type: String,
-      enum: ["pending", "approved", "rejected", "assigned"],
+      enum: ["pending", "accepted", "rejected", "assigned"],
       default: "pending"
     },
 
