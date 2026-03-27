@@ -44,13 +44,17 @@ export class NotificationController {
   ) => {
     try {
       const notificationId = req.params.id;
+      const userId = (req as any).user?._id;
 
+      if (!userId) {
+        throw new ApiError(401, "Unauthorized");
+      }
       if (!notificationId) {
         throw new ApiError(400, "Notification Id required");
       }
 
       const notification =
-        await this.notificationService.getSingleNotification(notificationId);
+        await this.notificationService.getSingleNotification(notificationId,userId);
 
       return res.status(200).json({
         message: "Notification fetched successfully",

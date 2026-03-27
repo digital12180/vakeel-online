@@ -230,7 +230,7 @@ export class ConsultationService {
     // ✅ GET BY ID (STRICT)
     async getRequestById(id: string) {
         try {
-            if (!mongoose.Types.ObjectId.isValid(id)) {
+            if (!id || typeof id !== "string" || !mongoose.Types.ObjectId.isValid(id)) {
                 throw new ApiError(400, "Invalid consultation ID");
             }
 
@@ -543,6 +543,55 @@ export class ConsultationService {
             throw error instanceof ApiError
                 ? error
                 : new ApiError(500, "Failed to assign professional");
+        }
+    }
+
+    async getAllRequestsByUser(query: any, userId: string) {
+        try {
+            const filter: any = { isActive: true, userId: userId };
+
+            if (query.status) {
+                const allowedStatus = ["pending", "assigned", "accepted", "rejected", "completed", "cancelled"];
+                if (!allowedStatus.includes(query.status)) {
+                    throw new ApiError(400, "Invalid status filter");
+                }
+                filter.status = query.status;
+            }
+
+            if (query.paymentStatus) {
+                const allowedPayment = ["pending", "paid", "failed"];
+                if (!allowedPayment.includes(query.paymentStatus)) {
+                    throw new ApiError(400, "Invalid payment status");
+                }
+                filter.paymentStatus = query.paymentStatus;
+            }
+
+            if (query.category) {
+                filter.category = query.category;
+            }
+
+            const page = Math.max(1, Number(query.page) || 1);
+            const limit = Math.max(1, Number(query.limit) || 10);
+            const skip = (page - 1) * limit;
+
+            const requests = await ConsultationRequest.find(filter)
+                .populate("userId", "fullname email")
+                .populate("professionalId", "_id fullname email")
+                .populate("serviceId")
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .lean();
+
+            const total = await ConsultationRequest.countDocuments(filter);
+
+            return { total, page, limit, requests };
+
+        } catch (error: any) {
+            console.error("Fetch Consultation Error:", error.message);
+            throw error instanceof ApiError
+                ? error
+                : new ApiError(500, "Failed to fetch consultation requests");
         }
     }
 }
