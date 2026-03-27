@@ -1,70 +1,72 @@
-import mongoose, { Schema, Document } from "mongoose";
+// import mongoose, { Schema, Document } from "mongoose";
 
-export interface IPayment extends Document {
+// export interface IPayment extends Document {
 
-    userId: mongoose.Types.ObjectId;
-    consultationId: mongoose.Types.ObjectId;
+//     userId: mongoose.Types.ObjectId;
+//     consultationId: mongoose.Types.ObjectId;
 
-    amount: number;
-    currency: string;
+//     amount: number;
+//     currency: string;
 
-    stripeSessionId: string;
-    stripePaymentIntentId?: string;
+//     stripeSessionId: string;
+//     stripePaymentIntentId?: string;
 
-    status: "pending" | "success" | "failed";
+//     status: "pending" | "success" | "failed";
 
-    paidAt?: Date;
-    retryCount:number;
-    parentPaymentId:mongoose.Types.ObjectId;
-}
-// models/payment.model.t
+//     paidAt?: Date;
+//     retryCount:number;
+//     parentPaymentId:mongoose.Types.ObjectId;
+// }
+// // models/payment.model.t
 
-const paymentSchema = new Schema<IPayment>({
-    userId: {
-        type: Schema.Types.ObjectId,
-        ref: "User",
-        required: true
-    },
+// const paymentSchema = new Schema<IPayment>({
+//     userId: {
+//         type: Schema.Types.ObjectId,
+//         ref: "User",
+//         required: true
+//     },
 
-    consultationId: {
-        type: Schema.Types.ObjectId,
-        ref: "ConsultationRequest",
-        required: true
-    },
+//     consultationId: {
+//         type: Schema.Types.ObjectId,
+//         ref: "ConsultationRequest",
+//         required: true
+//     },
 
-    amount: {
-        type: Number,
-        required: true
-    },
+//     amount: {
+//         type: Number,
+//         required: true
+//     },
 
-    currency: {
-        type: String,
-        default: "INR"
-    },
+//     currency: {
+//         type: String,
+//         default: "INR"
+//     },
 
-    stripeSessionId: {
-        type: String,
-        required: true
-    },
+//     stripeSessionId: {
+//         type: String,
+//         required: true
+//     },
 
-    stripePaymentIntentId: String,
+//     stripePaymentIntentId: String,
 
-    status: {
-        type: String,
-        enum: ["pending", "success", "failed"],
-        default: "pending"
-    },
+//     status: {
+//         type: String,
+//         enum: ["pending", "success", "failed"],
+//         default: "pending"
+//     },
 
-    paidAt: Date,
-    retryCount: {
-        type: Number,
-        default: 0
-    },
+//     paidAt: Date,
+//     retryCount: {
+//         type: Number,
+//         default: 0
+//     },
 
-    parentPaymentId: {
-        type: Schema.Types.ObjectId,
-        ref: "Payment"
-    }
-}, { timestamps: true });
+//     parentPaymentId: {
+//         type: Schema.Types.ObjectId,
+//         ref: "Payment"
+//     }
+// }, { timestamps: true });
 
-export const Payment = mongoose.model("Payment", paymentSchema);
+// export const Payment = mongoose.model("Payment", paymentSchema);
+
+
