@@ -4,10 +4,10 @@ import { ApiError } from "../../utils/apiError.js";
 import { User } from "../../models/user.model.js";
 import { Service } from "../../models/service.model.js";
 import type { RequestDTO } from "../auth/auth.dtos.js";
-import { emailService } from "../../services/notification.service.js";
-
+import { emailService } from "../../services/email.service.js";
+import { Notification } from "../../models/notification.model.js";
+import { notificationService } from "../../services/notification.service.js";
 export class UserService {
-
     async TalkToPrefessional(userId: string, data: RequestDTO) {
         try {
             console.log("👉 userId:", userId);
@@ -99,7 +99,23 @@ export class UserService {
                 status: "pending",
                 paymentStatus: "pending"
             });
+            await Notification.create({
+                userId: userId,
+                title: "📩 Consultation Request Submitted",
+                message:
+                    "Your consultation request has been submitted successfully. Our team will review and assign a professional shortly.",
+                type: "consultation",
+                isRead: false,
+            });
 
+            try {
+                await notificationService.sendRequestCreated(
+                    userId,
+                    user.fullname
+                );
+            } catch (error: any) {
+                console.error("⚠️ Notification failed:", error.message);
+            }
             // ✅ Email safe
             try {
                 await emailService.sendRequestCreated(user.email, user.fullname);
