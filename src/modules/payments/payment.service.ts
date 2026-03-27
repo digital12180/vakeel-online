@@ -162,3 +162,171 @@
 //   };
 // };
 
+// services/payment.service.ts
+
+import mongoose from "mongoose";
+import crypto from "crypto";
+import { Payment, PaymentStatus } from "../../models/payment.model.js";
+import Razorpay from "razorpay";
+import { ApiError } from "../../utils/apiError.js";
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_SECRET,
+});
+
+export class PaymentService {
+
+  // ✅ CREATE PAYMENT
+  static async createPayment(userId: string, amount: number, purpose: string) {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      const order = await razorpay.orders.create({
+        amount: amount * 100,
+        currency: "INR",
+        receipt: `receipt_${Date.now()}`,
+      });
+
+      const payment = await Payment.create([{
+        userId,
+        orderId: order.id,
+        amount,
+        purpose,
+        status: PaymentStatus.INITIALIZE,
+      }], { session });
+
+      await session.commitTransaction();
+
+      return {
+        order,
+        payment: payment[0],
+      };
+
+    } catch (error) {
+      await session.abortTransaction();
+      throw new ApiError(500, "Payment creation failed");
+    } finally {
+      session.endSession();
+    }
+  }
+
+  // ✅ VERIFY PAYMENT
+  static async verifyPayment(data: any) {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      const payment = await Payment.findById(data.paymentId).session(session);
+      if (!payment) throw new ApiError(400, "Payment not found");
+
+      if (payment.status === PaymentStatus.PAID) {
+        return { message: "Already paid" };
+      }
+
+      const body = data.razorpay_order_id + "|" + data.razorpay_payment_id;
+
+      const expectedSignature = crypto
+        .createHmac("sha256", process.env.RAZORPAY_SECRET!)
+        .update(body)
+        .digest("hex");
+
+      if (expectedSignature !== data.razorpay_signature) {
+        payment.status = PaymentStatus.FAILED;
+        await payment.save({ session });
+        throw new ApiError(400, "Invalid signature");
+      }
+
+      payment.status = PaymentStatus.PAID;
+      payment.paymentId = data.razorpay_payment_id;
+      payment.signature = data.razorpay_signature;
+      payment.isLocked = true;
+
+      await payment.save({ session });
+
+      await session.commitTransaction();
+
+      return payment;
+
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
+  }
+
+  // ❌ PAYMENT FAILED
+  static async paymentFailed(paymentId: string, reason: string) {
+    const payment = await Payment.findById(paymentId);
+
+    if (!payment) throw new ApiError(400, "Payment not found");
+
+    if (payment.status === PaymentStatus.PAID) {
+      return { message: "Already paid" };
+    }
+
+    payment.status = PaymentStatus.FAILED;
+    payment.failureReason = reason;
+    payment.retryCount += 1;
+
+    await payment.save();
+
+    return payment;
+  }
+
+  // 🔁 RETRY PAYMENT
+  static async retryPayment(paymentId: string) {
+    const payment = await Payment.findById(paymentId);
+
+    if (!payment) throw new ApiError(400, "Payment not found");
+
+    if (payment.isLocked) {
+      throw new ApiError(409, "Payment already completed");
+    }
+
+    if (payment.retryCount >= 3) {
+      throw new ApiError(400, "Max retries reached");
+    }
+
+    const newOrder = await razorpay.orders.create({
+      amount: payment.amount * 100,
+      currency: "INR",
+    });
+
+    payment.orderId = newOrder.id;
+    payment.status = PaymentStatus.INITIALIZE;
+
+    await payment.save();
+
+    return newOrder;
+  }
+
+  // 📜 PAYMENT HISTORY
+  static async getHistory(userId: string, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+
+    const data = await Payment.find({ userId })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await Payment.countDocuments({ userId });
+
+    return { total, data };
+  }
+
+
+  static async getHisotryByAdmin(page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+
+    const data = await Payment.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await Payment.countDocuments();
+
+    return { total, data };
+  }
+}
