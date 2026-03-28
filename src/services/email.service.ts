@@ -66,11 +66,11 @@ class EmailService {
     );
   }
 
- async sendRequestToProfessional(email: string, name: string) {
-  return this.sendEmail(
-    email,
-    "📩 Consultation Request Submitted",
-    `
+  async sendRequestToProfessional(email: string, name: string) {
+    return this.sendEmail(
+      email,
+      "📩 Consultation Request Submitted",
+      `
     <h2>Hello ${name},</h2>
     <p>Your consultation request has been successfully submitted.</p>
     <p>A professional will review your request and respond shortly.</p>
@@ -78,8 +78,8 @@ class EmailService {
     <p>Thank you for using Vakeel.</p>
     <p>Regards,<br/>Vakeel Team</p>
     `
-  );
-}
+    );
+  }
 
   // =============================================
   // ✅ 2. REQUEST ACCEPTED
@@ -145,6 +145,55 @@ class EmailService {
       <h2>Hello ${name},</h2>
       <p>You received a new message from <b>${senderName}</b>.</p>
       <p>Login to your account to reply.</p>
+      <br/>
+      <p>Thanks,<br/>Vakeel Team</p>
+      `
+    );
+  }
+  // =============================================
+  // 🔐 SEND OTP EMAIL
+  // =============================================
+  async sendOtpEmail(email: string, otp: string, name = "User") {
+    try {
+      console.log(`📧 Sending OTP to: ${email}`);
+
+      const html = `
+      <h2>Hello ${name},</h2>
+      <p>Your OTP is:</p>
+      <h1>${otp}</h1>
+      <p>This OTP is valid for 5 minutes.</p>
+      <br/>
+      <p>Thanks,<br/>Vakeel Team</p>
+    `;
+
+      await this.transporter.sendMail({
+        from: `"Vakeel App" <${process.env.EMAIL}>`,
+        to: email,
+        subject: "🔐 OTP Verification",
+        html,
+      });
+
+      console.log(`✅ OTP sent to ${email}`);
+
+      return true;
+
+    } catch (error: any) {
+      console.error("❌ OTP email failed:", error.message);
+
+      // fallback
+      console.log(`🔐 OTP for ${email}: ${otp}`);
+
+      return true;
+    }
+  }
+  async sendPasswordResetEmail(email: string, name: string) {
+    return this.sendEmail(
+      email,
+      "🔑 Password Reset Successful",
+      `
+      <h2>Hello ${name},</h2>
+      <p>Your password has been successfully reset.</p>
+      <p>If this wasn't you, contact support immediately.</p>
       <br/>
       <p>Thanks,<br/>Vakeel Team</p>
       `

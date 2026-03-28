@@ -9,6 +9,7 @@ import { deleteFromCloudinary } from "../../utils/deleteImage.js";
 import bcrypt from "bcryptjs";
 import { emailService } from "../../services/email.service.js";
 import { verifyCertificate } from "../../services/file-upload.service.js";
+import { OtpModel } from "../../models/otp.model.js";
 
 export class ProfessionalService {
 
@@ -531,5 +532,60 @@ export class ProfessionalService {
 
             throw new ApiError(500, "Failed to change active status professional");
         }
+    }
+    // ==================== STEP 5: FORGOT PASSWORD ====================
+    async forgotPassword(email: string) {
+        if (typeof email !== "string") {
+            throw new ApiError(400, "Email must be string");
+        }
+        const user = await Professional.findOne({ email: email });
+
+        if (!user) {
+            throw new ApiError(404, "Professional not found");
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Save OTP (you should store in DB or Redis)
+        await OtpModel.create({
+            email,
+            otp,
+            expiresAt: Date.now() + 5 * 60 * 1000,
+        });
+
+        await emailService.sendOtpEmail(email, otp, user.fullname);
+
+        return {
+            message: "OTP sent to email",
+        };
+    }
+
+    // ==================== STEP 6: RESET PASSWORD ====================
+    async resetPassword(email: string, otp: string, newPassword: string) {
+
+        const otpRecord = await OtpModel.findOne({ email, otp });
+
+        if (!otpRecord) {
+            throw new ApiError(400, "Invalid OTP");
+        }
+
+        if (otpRecord.expiresAt < new Date()) {
+            throw new ApiError(400, "OTP expired");
+        }
+
+        // ✅ update password
+        const hashed = await bcrypt.hash(newPassword, 10);
+
+        await Professional.updateOne(
+            { email },
+            { password: hashed }
+        );
+
+        // ✅ delete OTP
+        await OtpModel.deleteOne({ _id: otpRecord._id });
+
+        return {
+            message: "Password reset successful",
+        };
     }
 }
