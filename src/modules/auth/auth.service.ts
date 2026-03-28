@@ -1,5 +1,6 @@
 import { generateToken, refreshToken } from '../../middlewares/auth.middleware.js';
 import { Professional } from '../../models/professional.model.js';
+import { OtpModel } from '../../models/otp.model.js';
 import bcrypt from "bcryptjs"
 import type {
     RegisterDto,
@@ -17,6 +18,7 @@ import { ApiError } from '../../utils/apiError.js';
 import { User } from '../../models/user.model.js';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../../responses/message.js';
 import { uploadToCloudinary } from '../../utils/cloudinary.js';
+import { emailService } from '../../services/email.service.js';
 // import { verifyCertificate } from '../../services/file-upload.service.js';
 
 export class AuthService {
@@ -301,96 +303,60 @@ export class AuthService {
         };
     }
     // ==================== STEP 5: FORGOT PASSWORD ====================
-    // async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<SendOtpResponseDto> {
-    //     const { identifier } = forgotPasswordDto;
+    async forgotPassword(email: string) {
+        if (typeof email !== "string") {
+            throw new ApiError(400, "Email must be string");
+        }
+        const user = await User.findOne({ email: email });
 
-    //     // ✅ DEVELOPMENT: Always send OTP
-    //     if (process.env.NODE_ENV === 'development') {
-    //         console.log(`🔧 [DEV] Forgot password for: ${identifier}`);
-    //         return this.sendOtp({
-    //             identifier,
-    //             type: 'forgot_password',
-    //         });
-    //     }
+        if (!user) {
+            throw new ApiError(404, "User not found");
+        }
 
-    //     // Production: Check if user exists
-    //     const user = await this.userRepository.findByEmailOrPhone(identifier);
-    //     if (!user) {
-    //         // Don't reveal if user exists
-    //         return {
-    //             sessionId: 'dummy-session',
-    //             message: ERROR_MESSAGES.FORGOT_PASSWORD_OTP_MESSAGE,
-    //             expiresIn: 0,
-    //         };
-    //     }
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    //     // Use existing sendOtp method
-    //     return this.sendOtp({
-    //         identifier,
-    //         type: 'forgot_password',
-    //     });
-    // }
+        // Save OTP (you should store in DB or Redis)
+        await OtpModel.create({
+            email,
+            otp,
+            expiresAt: Date.now() + 5 * 60 * 1000,
+        });
+
+        await emailService.sendOtpEmail(email, otp, user.fullname);
+
+        return {
+            message: "OTP sent to email",
+        };
+    }
 
     // ==================== STEP 6: RESET PASSWORD ====================
-    // async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<{ message: string }> {
-    //     const { sessionId, password, confirmPassword } = resetPasswordDto;
+    async resetPassword(email: string, otp: string, newPassword: string) {
 
-    //     // Get verified session
-    //     const session = await this.verificationRepository.getVerifiedSession(sessionId);
-    //     if (!session) {
-    //         throw new ApiError(400, ERROR_MESSAGES.SESSION_EXPIRED_NOT_VERIFIED);
-    //     }
+        const otpRecord = await OtpModel.findOne({ email, otp });
 
-    //     // Validate session type
-    //     if (session.type !== 'forgot_password') {
-    //         throw new ApiError(400, ERROR_MESSAGES.INVALID_SESSION_TYPE_PASSWORD_RESET);
-    //     }
+        if (!otpRecord) {
+            throw new ApiError(400, "Invalid OTP");
+        }
 
-    //     // ✅ FIX: Use password utility for validation
-    //     try {
-    //         // ✅ PASSWORD NORMALIZATION: Add here
-    //         const cleanPassword = password.normalize('NFKC');
-    //         const cleanConfirmPassword = confirmPassword.normalize('NFKC');
+        if (otpRecord.expiresAt < new Date()) {
+            throw new ApiError(400, "OTP expired");
+        }
 
-    //         console.log("🔍 Password normalization applied for reset:");
-    //         console.log("  - Original password length:", password.length);
-    //         console.log("  - Clean password length:", cleanPassword.length);
-    //         console.log("  - Original confirm password length:", confirmPassword.length);
-    //         console.log("  - Clean confirm password length:", cleanConfirmPassword.length);
+        // ✅ update password
+        const hashed = await bcrypt.hash(newPassword, 10);
 
-    //         const { hash: hashedPassword } = await passwordEncryptor.preparePasswordForRegistration(
-    //             cleanPassword,
-    //             cleanConfirmPassword
-    //         );
+        await User.updateOne(
+            { email },
+            { password: hashed }
+        );
 
-    //         // Find user by identifier
-    //         const user = await this.userRepository.findByEmailOrPhone(session.identifier);
-    //         if (!user) {
-    //             throw new ApiError(404, ERROR_MESSAGES.USER_NOT_FOUND);
-    //         }
+        // ✅ delete OTP
+        await OtpModel.deleteOne({ _id: otpRecord._id });
 
-    //         // Update password using utility hash
-    //         await this.userRepository.updateById(user._id.toString(), { password: hashedPassword });
-
-    //         // Delete verification session
-    //         await this.verificationRepository.deleteOne({ sessionId });
-
-    //         // Send notification email if reset via email
-    //         if (session.identifier.includes('@')) {
-    //             await EmailService.sendPasswordResetEmail(
-    //                 session.identifier,
-    //                 `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login`,
-    //                 user.name
-    //             );
-    //         }
-
-    //         return { message: SUCCESS_MESSAGES.PASSWORD_RESET };
-
-    //     } catch (error: any) {
-    //         console.error("❌ Password reset failed:", error.message);
-    //         throw new ApiError(400, ERROR_MESSAGES.PASSWORD_RESET_FAILED);
-    //     }
-    // }
+        return {
+            message: "Password reset successful",
+        };
+    }
 
 
     // AuthService class ke last mein, `cleanupExpiredSessions` ke baad:

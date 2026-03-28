@@ -21,6 +21,8 @@ router.route("/:id")
 router.route('/soft-delete/:id').patch(verifyToken, adminOnly, controller.softdeleteProfessional)
 router.route("/update-certificate/:id").patch(verifyToken, adminOnly, upload.single('certificate'), controller.updateCertificateByAdmin);
 router.route("/update-certificate").patch(verifyToken, professionalOnly, upload.single('certificate'), controller.updateCertificate)
-router.route("/").put(verifyToken,professionalOnly, controller.updateProfessional);
-router.route("/update-active-status/:id").patch(verifyToken,professionalOnly, controller.UpdateStatus);
+router.route("/").put(verifyToken, professionalOnly, controller.updateProfessional);
+router.route("/update-active-status/:id").patch(verifyToken, professionalOnly, controller.UpdateStatus);
+router.route('/forgot-password').post(controller.forgotPassword);
+router.route('/reset-password').post(controller.resetPassword);
 export default router;

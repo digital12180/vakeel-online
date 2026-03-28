@@ -109,29 +109,36 @@ export class AuthController {
     }
   };
 
-  //   // ==================== STEP 5: FORGOT PASSWORD ====================
-  //   forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  //     try {
-  //       const forgotPasswordDto: ForgotPasswordDto = req.body;
-  //       const result = await this.authService.forgotPassword(forgotPasswordDto);
+  // ==================== STEP 5: FORGOT PASSWORD ====================
+  forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+    
+      const { email } = req.body;
+      const result = await this.authService.forgotPassword(email);
 
-  //       ApiResponse.success(res, result, result.message);
-  //     } catch (error) {
-  //       next(error);
-  //     }
-  //   };
+      ApiResponse.success(res, result, result.message);
+    } catch (error) {
+      next(error);
+    }
+  };
 
   // ==================== STEP 6: RESET PASSWORD ====================
-  //   resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  //     try {
-  //       const resetPasswordDto: ResetPasswordDto = req.body;
-  //       const result = await this.authService.resetPassword(resetPasswordDto);
+  resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { email, otp, password } = req.body;
 
-  //       ApiResponse.success(res, null, result.message);
-  //     } catch (error) {
-  //       next(error);
-  //     }
-  //   };
+      const result = await this.authService.resetPassword(
+        email,
+        otp,
+        password
+      );
+
+      ApiResponse.success(res, null, result.message);
+
+    } catch (error) {
+      next(error);
+    }
+  };
 
   // ==================== OTHER AUTH ENDPOINTS ====================
   refreshToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {

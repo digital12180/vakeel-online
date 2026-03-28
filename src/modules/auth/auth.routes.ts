@@ -15,7 +15,8 @@ router.route('/logout').post(verifyToken, authcontroller.logout);
 router.route('/refresh-token').get(verifyToken, authcontroller.refreshToken);
 router.route('/profile').get(verifyToken, authcontroller.getProfile);
 router.route('/update-profile').put(verifyToken, authcontroller.updateProfile);
+router.route('/forgot-password').post(authcontroller.forgotPassword);
+router.route('/reset-password').post(authcontroller.resetPassword);
 
 export default router;
-
 

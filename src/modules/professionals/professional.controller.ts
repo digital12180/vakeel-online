@@ -1,6 +1,7 @@
-import type { Request, Response } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { ProfessionalService } from "./professional.service.js";
 import { ApiError } from "../../utils/apiError.js";
+import { ApiResponse } from "../../utils/apiResponse.js";
 
 export class ProfessionalController {
     private professionalService: ProfessionalService;
@@ -297,4 +298,34 @@ export class ProfessionalController {
         }
     };
 
+    // ==================== STEP 5: FORGOT PASSWORD ====================
+    forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+        try {
+
+            const { email } = req.body;
+            const result = await this.professionalService.forgotPassword(email);
+
+            ApiResponse.success(res, result, result.message);
+        } catch (error) {
+            next(error);
+        }
+    };
+
+    // ==================== STEP 6: RESET PASSWORD ====================
+    resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const { email, otp, password } = req.body;
+
+            const result = await this.professionalService.resetPassword(
+                email,
+                otp,
+                password
+            );
+
+            ApiResponse.success(res, null, result.message);
+
+        } catch (error) {
+            next(error);
+        }
+    };
 }
