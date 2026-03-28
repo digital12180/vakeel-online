@@ -68,11 +68,9 @@
 // }, { timestamps: true });
 
 // export const Payment = mongoose.model("Payment", paymentSchema);
+
 import mongoose, { Schema, Document, Types } from "mongoose";
 
-/**
- * Enum for Payment Status
- */
 export enum PaymentStatus {
   INITIALIZE = "INITIALIZE",
   PAID = "PAID",
@@ -80,20 +78,23 @@ export enum PaymentStatus {
   REFUNDED = "REFUNDED",
 }
 
-/**
- * Interface for Payment Document
- */
 export interface IPayment extends Document {
   userId: Types.ObjectId;
-  orderId: string; // Razorpay order id
+
+  // 🔥 NEW
+  professionalId?: Types.ObjectId | null;
+  type: "professional" | "global";
+
+  orderId: string;
   paymentId?: string;
   signature?: string;
+
   amount: number;
-  purpose: string; // 🔥 NEW (why payment is done)
+  purpose: string;
+
   status: PaymentStatus;
   failureReason?: string;
 
-  // 🔥 retry + protection
   retryCount: number;
   isLocked: boolean;
 
@@ -101,9 +102,6 @@ export interface IPayment extends Document {
   updatedAt: Date;
 }
 
-/**
- * Payment Schema
- */
 const paymentSchema: Schema<IPayment> = new Schema(
   {
     userId: {
@@ -112,19 +110,28 @@ const paymentSchema: Schema<IPayment> = new Schema(
       required: true,
     },
 
+    // 🔥 NEW FIELD
+    professionalId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Professional",
+      default: null,
+    },
+
+    // 🔥 NEW FIELD
+    type: {
+      type: String,
+      enum: ["professional", "global"],
+      required: true,
+    },
+
     orderId: {
       type: String,
       required: true,
-      unique: true, // 🔥 prevent duplicate orders
+      unique: true,
     },
 
-    paymentId: {
-      type: String,
-    },
-
-    signature: {
-      type: String,
-    },
+    paymentId: String,
+    signature: String,
 
     amount: {
       type: Number,
@@ -134,7 +141,7 @@ const paymentSchema: Schema<IPayment> = new Schema(
 
     purpose: {
       type: String,
-      required: true, // e.g. CONSULTATION_FEE
+      required: true,
     },
 
     status: {
@@ -143,9 +150,7 @@ const paymentSchema: Schema<IPayment> = new Schema(
       default: PaymentStatus.INITIALIZE,
     },
 
-    failureReason: {
-      type: String,
-    },
+    failureReason: String,
 
     retryCount: {
       type: Number,
@@ -154,18 +159,13 @@ const paymentSchema: Schema<IPayment> = new Schema(
 
     isLocked: {
       type: Boolean,
-      default: false, // once paid → lock
+      default: false,
     },
   },
   { timestamps: true }
 );
 
-/**
- * Index for fast queries (production 🔥)
- */
-paymentSchema.index({ userId: 1, createdAt: -1 });
+// 🔥 IMPORTANT INDEX (for fast payment checks)
+paymentSchema.index({ userId: 1, professionalId: 1, type: 1, status: 1 });
 
-/**
- * Export Model
- */
 export const Payment = mongoose.model<IPayment>("Payment", paymentSchema);
