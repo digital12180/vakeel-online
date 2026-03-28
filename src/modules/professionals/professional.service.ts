@@ -557,6 +557,7 @@ export class ProfessionalService {
 
         return {
             message: "OTP sent to email",
+            otp: otp
         };
     }
 

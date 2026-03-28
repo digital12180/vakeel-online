@@ -326,6 +326,7 @@ export class AuthService {
 
         return {
             message: "OTP sent to email",
+            otp:otp
         };
     }
 
