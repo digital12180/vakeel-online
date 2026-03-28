@@ -32,7 +32,7 @@ export class NotificationService {
       throw new ApiError(400, "Invalid Notification ID");
     }
 
-    const notification = await Notification.findOne({notificationId,userId});
+    const notification = await Notification.findOne({_id:notificationId,userId});
 
     if (!notification) {
       throw new ApiError(404, "Notification not found");
