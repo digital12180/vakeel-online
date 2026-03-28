@@ -10,6 +10,8 @@ router.post("/:id", verifyToken, userOnly, controller.createRequest);
 
 // ✅ GET
 router.get("/", verifyToken, adminAndprofessional, controller.getAllRequests);
+router.get("/get-all-req-y-user", verifyToken, userOnly, controller.getAllRequestsByUser)
+
 router.get("/:id", verifyToken, adminAndprofessional, controller.getRequestById);
 
 // ✅ PROFESSIONAL / ADMIN
@@ -20,7 +22,6 @@ router.delete("/:id", verifyToken, userAndadmin, controller.deleteRequest);
 
 router.post("/:id/assign", verifyToken, adminOnly, controller.assignProfessionalByAdmin);
 
-router.get("/get-all-req-y-user", verifyToken, userOnly, controller.getAllRequestsByUser);
 
 
 export default router;

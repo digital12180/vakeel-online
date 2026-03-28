@@ -2,6 +2,8 @@ import type { Request, Response, NextFunction } from "express";
 import { ConsultationService } from "./consultation.service.js";
 import { ApiError } from "../../utils/apiError.js";
 import { Professional } from "../../models/professional.model.js";
+import { PaymentService } from "../payments/payment.service.js";
+const paymentService = new PaymentService();
 const consultationService = new ConsultationService();
 
 export class ConsultationController {
@@ -19,7 +21,14 @@ export class ConsultationController {
             if (!professionalId) {
                 return next(new ApiError(400, "Professional id required"));
             }
+            const isPaid = await paymentService.hasPaidForProfessional(
+                userId,
+                professionalId
+            );
 
+            if (!isPaid) {
+                throw new ApiError(402, "Please pay before sending request");
+            }
             const consultation = await consultationService.createRequest(
                 userId,
                 professionalId

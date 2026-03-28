@@ -57,7 +57,7 @@ export class ConsultationService {
                 consultationFee: professional.consultationFee || 0,
                 professionalId: professional._id,
                 status: "assigned",
-                paymentStatus: "pending"
+                paymentStatus: "paid"
             });
             await Notification.create({
                 userId: userId,

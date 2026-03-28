@@ -175,26 +175,138 @@ const razorpay = new Razorpay({
 });
 
 export class PaymentService {
+  // ✅ check per professional
+  async hasPaidForProfessional(userId: string, professionalId: string) {
+    const payment = await Payment.findOne({
+      userId,
+      professionalId,
+      type: "professional",
+      status: PaymentStatus.PAID
+    });
 
+    return !!payment;
+  }
+
+  // ✅ check global access
+  async hasGlobalAccess(userId: string) {
+    const payment = await Payment.findOne({
+      userId,
+      type: "global",
+      status: PaymentStatus.PAID
+    });
+
+    return !!payment;
+  }
   // ✅ CREATE PAYMENT
-  static async createPayment(userId: string, amount: number, purpose: string) {
+  static async createPayment(userId: string, data: any) {
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
-      const order = await razorpay.orders.create({
-        amount: amount * 100,
-        currency: "INR",
-        receipt: `receipt_${Date.now()}`,
-      });
+      // ✅ 1. Basic validation
+      if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+        throw new ApiError(401, "Invalid or unauthorized user");
+      }
 
-      const payment = await Payment.create([{
-        userId,
-        orderId: order.id,
-        amount,
-        purpose,
-        status: PaymentStatus.INITIALIZE,
-      }], { session });
+      if (!data) {
+        throw new ApiError(400, "Request data is required");
+      }
+
+      const { amount, type, professionalId } = data;
+
+      // ✅ 2. Validate amount
+      if (!amount || typeof amount !== "number" || amount <= 0) {
+        throw new ApiError(400, "Invalid payment amount");
+      }
+
+      // ✅ 3. Validate type
+      const allowedTypes = ["professional", "global"];
+      if (!type || !allowedTypes.includes(type)) {
+        throw new ApiError(400, "Invalid payment type");
+      }
+
+      // ✅ 4. Professional validation (ONLY if type = professional)
+      let validProfessionalId: mongoose.Types.ObjectId | null = null;
+
+      if (type === "professional") {
+        if (!professionalId || !mongoose.Types.ObjectId.isValid(professionalId)) {
+          throw new ApiError(400, "Valid professionalId is required");
+        }
+
+        // optional: verify professional exists
+        const professionalExists = await mongoose
+          .model("Professional")
+          .findById(professionalId)
+          .select("_id")
+          .lean();
+
+        if (!professionalExists) {
+          throw new ApiError(404, "Professional not found");
+        }
+
+        validProfessionalId = new mongoose.Types.ObjectId(professionalId);
+
+        // ✅ Prevent duplicate successful payment
+        const existingPayment = await Payment.findOne({
+          userId,
+          professionalId,
+          type: "professional",
+          status: PaymentStatus.PAID,
+        });
+
+        if (existingPayment) {
+          throw new ApiError(409, "Already paid for this professional");
+        }
+      }
+
+      // ✅ 5. Prevent duplicate global payment
+      if (type === "global") {
+        const existingGlobal = await Payment.findOne({
+          userId,
+          type: "global",
+          status: PaymentStatus.PAID,
+        });
+
+        if (existingGlobal) {
+          throw new ApiError(409, "Global access already purchased");
+        }
+      }
+
+      // ✅ 6. Create Razorpay order
+      let order;
+      try {
+        order = await razorpay.orders.create({
+          amount: Math.round(amount * 100), // safety
+          currency: "INR",
+         receipt: `rcpt_${Date.now()}`
+        });
+      } catch (razorError: any) {
+        console.error("❌ Razorpay Error FULL:", razorError);
+
+        throw new ApiError(
+          502,
+          razorError?.error?.description || razorError.message || "Razorpay error"
+        );
+      }
+
+      // ✅ 7. Save payment in DB
+      const payment = await Payment.create(
+        [
+          {
+            userId,
+            orderId: order.id,
+            amount,
+            type,
+            professionalId: validProfessionalId,
+            purpose:
+              type === "professional"
+                ? "PROFESSIONAL_CONSULTATION"
+                : "GLOBAL_ACCESS",
+            status: PaymentStatus.INITIALIZE,
+          },
+        ],
+        { session }
+      );
 
       await session.commitTransaction();
 
@@ -203,9 +315,15 @@ export class PaymentService {
         payment: payment[0],
       };
 
-    } catch (error) {
+    } catch (error: any) {
       await session.abortTransaction();
-      throw new ApiError(500, "Payment creation failed");
+
+      console.error("❌ Payment Creation Error:", error);
+
+      throw error instanceof ApiError
+        ? error
+        : new ApiError(500, error.message || "Payment creation failed");
+
     } finally {
       session.endSession();
     }

@@ -139,15 +139,14 @@
 
 import type { Request, Response, NextFunction } from "express";
 import { PaymentService } from "./payment.service.js";
-
 export class PaymentController {
 
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const { amount, purpose } = req.body;
+      const { amount, professionalId, type } = req.body;
       const userId = req.user._id;
 
-      const result = await PaymentService.createPayment(userId, amount, purpose);
+      const result = await PaymentService.createPayment(userId, { amount, professionalId, type });
 
       res.json({ success: true, data: result });
 

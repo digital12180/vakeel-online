@@ -97,7 +97,7 @@ export class UserService {
                 serviceId: validServiceId,
                 consultationFee: 499,
                 status: "pending",
-                paymentStatus: "pending"
+                paymentStatus: "paid"
             });
             await Notification.create({
                 userId: userId,
