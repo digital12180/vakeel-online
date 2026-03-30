@@ -505,7 +505,7 @@ export class ConsultationService {
 
             try {
                 await emailService.notifyProfessional(professional.email, professional.fullname, user.fullname)
-
+                await emailService.notifyUser(user.email, user.fullname, professional.fullname)
             } catch (error: any) {
                 console.error("⚠️ Email failed:", error.message);
             }
@@ -513,6 +513,13 @@ export class ConsultationService {
                 userId: user._id,
                 title: "👨‍⚖️ Professional Assigned",
                 message: `Your consultation request has been assigned to ${professional.fullname}.`,
+                type: "consultation",
+                isRead: false,
+            });
+            await Notification.create({
+                userId: professional._id, 
+                title: "📢 New Consultation Assigned",
+                message: `You have been assigned a new consultation request from ${user.fullname}. Please review the details and take action.`,
                 type: "consultation",
                 isRead: false,
             });

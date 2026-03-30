@@ -134,6 +134,52 @@ class EmailService {
     );
   }
 
+  async notifyUser(email: string, name: string, userName: string) {
+    return this.sendEmail(
+      email,
+      "Professional Assigned to Your Request",
+      `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      
+      <h2 style="color: #2c3e50;">Hello ${name},</h2>
+      
+      <p>
+        We’re happy to inform you that a professional has been successfully assigned to your request.
+      </p>
+      
+      <div style="background: #f4f6f8; padding: 15px; border-radius: 8px; margin: 15px 0;">
+        <p style="margin: 0;"><strong>Assigned Professional:</strong> ${userName}</p>
+      </div>
+      
+      <p>
+        You can now connect with the professional and proceed further. 
+        Please visit your dashboard for more details.
+      </p>
+      
+      <div style="margin: 25px 0;">
+        <a href="#" 
+           style="background-color: #007bff; color: #fff; padding: 10px 18px; 
+                  text-decoration: none; border-radius: 5px; display: inline-block;">
+          Go to Dashboard
+        </a>
+      </div>
+      
+      <p>
+        If you have any questions, feel free to reach out to our support team.
+      </p>
+      
+      <br/>
+      
+      <p>
+        Best regards,<br/>
+        <strong>Vakeel Team</strong>
+      </p>
+    
+    </div>
+    `
+    );
+  }
+
   // =============================================
   // 💬 5. NEW MESSAGE NOTIFICATION
   // =============================================
