@@ -94,6 +94,8 @@ export const initializeSocket = (server: HTTPServer): Server => {
 
   // ✅ Auth Middleware
   io.use((socket: CustomSocket, next) => {
+    console.log("Auth Data:", socket.handshake.auth);
+
     const userId = socket.handshake.auth?.userId;
 
     if (!userId) {
