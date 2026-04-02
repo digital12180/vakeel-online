@@ -2,14 +2,16 @@ import type { Request, Response } from "express";
 import { ChatService } from "./chat.service.js";
 import { SendMessageDto } from "./chat.dto.js";
 import { getIO } from "../../services/socket.service.js";
+import { generateRoomId } from "./generateRoom.js";
 
 const chatService = new ChatService();
 
 export class ChatController {
     async sendMessage(req: Request, res: Response) {
         try {
-            const body: SendMessageDto = req.body;
-
+            const body: any = req.body;
+            const roomId = generateRoomId(req.body.senderId, req.body.receiverId);
+            body.roomId = roomId;
             const message = await chatService.sendMessage(body);
 
             const io = getIO();

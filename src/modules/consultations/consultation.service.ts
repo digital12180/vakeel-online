@@ -312,12 +312,12 @@ export class ConsultationService {
             }
 
             // 🔥 ACCEPT VALIDATION
-            if (status === "accepted") {
-                throw new ApiError(
-                    400,
-                    "Meeting link or contact number required when accepting"
-                );
-            }
+            // if (status === "accepted") {
+            //     throw new ApiError(
+            //         400,
+            //         "Meeting link or contact number required when accepting"
+            //     );
+            // }
 
             request.status = status;
             if (status === "accepted") {
