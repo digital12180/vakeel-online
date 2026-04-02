@@ -293,7 +293,7 @@ export class ConsultationService {
 
             // 🔥 ADMIN → no restriction
 
-            const { status, meetingLink, contactNumber } = data;
+            const { status } = data;
 
             const allowedStatus = [
                 "assigned",
@@ -356,8 +356,6 @@ export class ConsultationService {
                 }
                 await emailService.sendRequestRejected(user.email, user.fullname);
             }
-            if (meetingLink) request.meetingLink = meetingLink.trim() ?? "";
-            if (contactNumber) request.contactNumber = contactNumber.trim() ?? "";
 
             await request.save();
 
