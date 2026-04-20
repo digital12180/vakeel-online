@@ -88,7 +88,7 @@ router.get(
 router.get('/all-history',
     verifyToken,
     adminOnly,
-    PaymentController.getHisotryByAdmin
+    PaymentController.getHistoryByAdmin
 )
 
 export default router;
