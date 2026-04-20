@@ -210,7 +210,7 @@ export class PaymentController {
     }
   }
 
-  static async getHisotryByAdmin(req: Request, res: Response, next: NextFunction) {
+  static async getHistoryByAdmin(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user._id;
       if (!userId || req.user.role !== "admin") {
@@ -218,7 +218,7 @@ export class PaymentController {
       }
       const { page, limit } = req.query;
 
-      const result = await PaymentService.getHisotryByAdmin(
+      const result = await PaymentService.getHistoryByAdmin(
         Number(page),
         Number(limit)
       );
